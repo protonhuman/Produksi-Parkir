@@ -1,0 +1,10 @@
+node_modules/
+
+# File development/scratch lokal
+*.py
+*.csv
+*.txt
+*.pdf
+old_index.html
+index_original.html
+keep-alive.html

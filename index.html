@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laporan Produksi Parkir — Syamsudin Noor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+  :root { --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335; --border: #1e2d44; --accent: #00d4ff; --accent2: #ff6b35; --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3; --shift1: #00d4ff; --shift2: #ff6b35; --shift3: #a78bfa; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  .container { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  .header-badge { display: inline-block; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--accent); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 4px 12px; border-radius: 2px; margin-bottom: 12px; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(20px, 4vw, 30px); font-weight: 800; line-height: 1.2; color: #fff; letter-spacing: -0.5px; }
+  h1 span { color: var(--accent); }
+  .subtitle { margin-top: 6px; font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
+  .section-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
+  .field label { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 12px; border-radius: 3px; outline: none; transition: border-color 0.2s; }
+  .field input[type="date"] { color-scheme: dark; cursor: pointer; }
+  .field input:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--text-dim); }
+  .field-full { grid-column: 1 / -1; }
+  
+  .shift-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .shift-btn { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 8px; border-radius: 3px; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .shift-btn:hover { border-color: var(--accent); color: var(--text); }
+  .shift-btn.active[data-shift="1"] { background: rgba(0,212,255,0.12); border-color: var(--shift1); color: var(--shift1); }
+  .shift-btn.active[data-shift="2"] { background: rgba(255,107,53,0.12); border-color: var(--shift2); color: var(--shift2); }
+  .shift-btn.active[data-shift="3"] { background: rgba(167,139,250,0.12); border-color: var(--shift3); color: var(--shift3); }
+  .shift-info { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; padding: 8px 12px; background: var(--surface2); border-left: 2px solid var(--accent); border-radius: 0 3px 3px 0; display: none; }
+  .shift-info.show { display: block; }
+  
+  .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 600px) { .upload-grid { grid-template-columns: 1fr; } }
+  .upload-zone { border: 1px dashed var(--border); border-radius: 3px; padding: 20px 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; background: var(--surface2); }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(0,212,255,0.05); }
+  .upload-zone.loaded { border-color: var(--accent3); border-style: solid; background: rgba(124,252,110,0.04); }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 24px; margin-bottom: 6px; }
+  .upload-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 4px; }
+  .upload-filename { font-size: 11px; color: var(--accent3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; margin: 0 auto; }
+  
+  .btn-primary { width: 100%; background: var(--accent); color: #000; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+  .btn-primary:hover:not(:disabled) { background: #33dbff; transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  
+  .btn-send { background: var(--accent3); color: #000; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px 20px; border-radius: 3px; cursor: pointer; transition: all 0.15s; margin-top: 16px; width: 100%; }
+  .btn-send:hover:not(:disabled) { background: #8fff85; transform: translateY(-1px); }
+  .btn-send:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  
+  .status { font-size: 12px; padding: 10px 14px; border-radius: 3px; margin-top: 12px; display: none; }
+  .status.show { display: block; }
+  .status.loading { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--accent); }
+  .status.success { background: rgba(124,252,110,0.1); border: 1px solid rgba(124,252,110,0.3); color: var(--accent3); }
+  .status.error { background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.3); color: var(--accent2); }
+  
+  .result-section { margin-top: 24px; display: none; }
+  .result-section.show { display: block; }
+  .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .result-meta { font-size: 11px; color: var(--text-dim); }
+  .result-date { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--accent); }
+  
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: var(--surface2); padding: 8px 12px; text-align: left; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(30,45,68,0.5); font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: none; }
+  .td-label { color: var(--text-dim); }
+  .td-num { text-align: right; font-weight: 500; }
+  .td-total { color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 700; }
+  .td-total-label { color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  tr.total-row { background: rgba(0,212,255,0.04); }
+  
+  .shift-badge { display: inline-block; padding: 3px 10px; border-radius: 2px; font-size: 10px; letter-spacing: 1px; font-weight: 600; }
+  .shift-badge.s1 { background: rgba(0,212,255,0.15); color: var(--shift1); border: 1px solid rgba(0,212,255,0.3); }
+  .shift-badge.s2 { background: rgba(255,107,53,0.15); color: var(--shift2); border: 1px solid rgba(255,107,53,0.3); }
+  .shift-badge.s3 { background: rgba(167,139,250,0.15); color: var(--shift3); border: 1px solid rgba(167,139,250,0.3); }
+  
+  .log-area { margin-top: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 12px; font-size: 11px; color: var(--text-dim); max-height: 120px; overflow-y: auto; line-height: 1.8; display: none; }
+  .log-area.show { display: block; }
+  .log-line { margin: 0; }
+  .log-ok { color: var(--accent3); }
+  .log-err { color: var(--accent2); }
+  .log-info { color: var(--accent); }
+  
+  .footnote { margin-top: 32px; font-size: 10px; color: var(--text-dim); text-align: center; letter-spacing: 1px; line-height: 1.8; }
+  .pill { display: inline-block; padding: 2px 8px; background: rgba(255,255,255,0.05); border-radius: 2px; font-size: 10px; color: var(--text-dim); border: 1px solid var(--border); }
+
+  .gas-selector { display: flex; gap: 6px; align-items: stretch; }
+  .gas-selector select { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 12px; border-radius: 3px; outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7fa3' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+  .gas-selector select:focus { border-color: var(--accent); }
+  .gas-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); font-size: 16px; width: 38px; border-radius: 3px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+  .gas-btn:hover { border-color: var(--accent); color: var(--text); }
+  .gas-btn-add:hover { border-color: var(--accent3); color: var(--accent3); }
+  .gas-btn-del:hover { border-color: #ef4444; color: #ef4444; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-badge">PT Angkasa Pura Indonesia</div>
+    <h1>Laporan Produksi <span>Parkir</span></h1>
+    <div class="subtitle">BANDARA INTERNASIONAL SYAMSUDIN NOOR — BANJARBARU</div>
+  </header>
+
+  <div class="section-label">Konfigurasi</div>
+  <div class="card">
+    <div class="settings-grid">
+      <div class="field">
+        <label>Pilih Tanggal</label>
+        <input type="date" id="inputDate" onchange="updateTanggalFields()" />
+      </div>
+      <div class="field">
+        <label>Nama Tab Sheet <small style="color:var(--accent);opacity:0.7">(otomatis)</small></label>
+        <input type="text" id="inputTanggal" readonly style="cursor:default;color:var(--accent);" placeholder="← Pilih tanggal dulu" />
+      </div>
+      <div class="field field-full">
+        <label>Google Apps Script</label>
+        <div class="gas-selector">
+          <select id="selectGAS" onchange="onSelectGAS()">
+            <option value="" disabled>— Pilih atau tambahkan URL —</option>
+          </select>
+          <button class="gas-btn gas-btn-del" id="btnDelGAS" onclick="hapusGAS()" title="Hapus URL ini">✕</button>
+          <button class="gas-btn gas-btn-add" onclick="tambahGAS()" title="Tambah URL baru">＋</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="section-label">Pilih Shift</div>
+  <div class="card">
+    <div class="shift-row">
+      <button class="shift-btn" data-shift="1" onclick="selectShift(1)">
+        SHIFT 1<br><small>05:00 – 13:00</small>
+      </button>
+      <button class="shift-btn" data-shift="2" onclick="selectShift(2)">
+        SHIFT 2<br><small>13:00 – 21:00</small>
+      </button>
+      <button class="shift-btn" data-shift="3" onclick="selectShift(3)">
+        SHIFT 3<br><small>21:00 – 05:00</small>
+      </button>
+    </div>
+    <div class="shift-info" id="shiftInfo"></div>
+  </div>
+
+  <div class="section-label">Upload PDF</div>
+  <div class="card">
+    <div class="upload-grid">
+      <div class="upload-zone" id="zone1" ondragover="onDragOver(event,1)" ondrop="onDrop(event,1)" ondragleave="onDragLeave(1)">
+        <input type="file" accept=".pdf" id="file1" onchange="onFileChange(1)">
+        <div class="upload-icon">📄</div>
+        <span class="upload-label" id="zone1Label">File PDF Hari Ini</span>
+        <div class="upload-filename" id="zone1Name">Seret atau klik pilih file</div>
+      </div>
+      <div class="upload-zone" id="zone2" ondragover="onDragOver(event,2)" ondrop="onDrop(event,2)" ondragleave="onDragLeave(2)">
+        <input type="file" accept=".pdf" id="file2" onchange="onFileChange(2)">
+        <div class="upload-icon">📄</div>
+        <span class="upload-label" id="zone2Label">File PDF Hari Berikutnya</span>
+        <div class="upload-filename" id="zone2Name">Opsional (untuk Shift 3)</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btnProses" onclick="prosesPDF()" disabled>
+      ▶ PROSES DATA
+    </button>
+
+    <div class="status" id="statusProses"></div>
+    <div class="log-area" id="logArea"></div>
+  </div>
+
+  <div class="result-section" id="resultSection">
+    <div class="section-label">Hasil Perhitungan</div>
+    <div class="card">
+      <div class="result-header">
+        <div>
+          <div class="result-date" id="resultDate">—</div>
+          <div class="result-meta" id="resultShift">—</div>
+        </div>
+        <span class="shift-badge" id="shiftBadge"></span>
+      </div>
+
+      <table id="resultTable">
+        <thead>
+          <tr>
+            <th>Kategori</th>
+            <th style="text-align:right">Keluar (Casual Out)</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+
+      <button class="btn-send" id="btnKirim" onclick="kirimKeSheet()" disabled>
+        ⬆ KIRIM KE GOOGLE SHEETS
+      </button>
+      <div class="status" id="statusKirim"></div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <span class="pill">MOTOR</span> = Motorcycle &nbsp;·&nbsp;
+    <span class="pill">MOBIL</span> = Car &nbsp;·&nbsp;
+    <span class="pill">BUS/TRUCK</span> = Bus + Truck + Box<br><br>
+    Data difilter murni dari kolom <strong>Casual Out (Cash + Cashless)</strong> PDF sesuai format Gambar 2
+  </div>
+
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let selectedShift = null;
+let pdfData1 = null; 
+let pdfData2 = null; 
+let lastResult = null;
+
+const BULAN_INDO = ['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
+
+function updateTanggalFields() {
+  const dateInput = document.getElementById('inputDate');
+  if (!dateInput.value) return;
+  const d = new Date(dateInput.value + 'T00:00:00');
+  const tgl = d.getDate();
+  const bulan = BULAN_INDO[d.getMonth()];
+  const tahun = d.getFullYear();
+  document.getElementById('inputTanggal').value = tgl + ' ' + bulan + ' ' + tahun;
+}
+
+// ===== MANAJEMEN URL GAS (Tersinkronisasi dengan Supabase) =====
+const supabaseUrl = 'https://nbxcvigngtzeymoleuvc.supabase.co';
+const supabaseKey = 'sb_publishable_C8ce4W1sC4VoDiRKnwkbhw_faMXX5lT';
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+let cachedGASList = [];
+
+async function loadGASList() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('app_settings')
+      .select('setting_value')
+      .eq('setting_key', 'gas_urls')
+      .single();
+      
+    if (data && data.setting_value) {
+      cachedGASList = data.setting_value;
+    } else {
+      // Jika kosong/error, masukkan default
+      cachedGASList = [{ name: 'Produksi Parkir (Default)', url: 'https://script.google.com/macros/s/AKfycbxrSqP9kCSNpfNmU4uVjuMtEFxLAImLz4NMUqoUZDSktXzfnL1CBPFocEdgtzBPWM-5/exec' }];
+    }
+  } catch (e) {
+    console.error("Supabase Error:", e);
+  }
+  renderGASDropdown();
+}
+
+async function saveGASListToSupabase(list) {
+  cachedGASList = list;
+  try {
+    await supabaseClient
+      .from('app_settings')
+      .update({ setting_value: list })
+      .eq('setting_key', 'gas_urls');
+  } catch (e) {
+    console.error("Supabase Error:", e);
+  }
+}
+
+function renderGASDropdown() {
+  const sel = document.getElementById('selectGAS');
+  const active = localStorage.getItem('gasActive') || '';
+  sel.innerHTML = '<option value="" disabled>— Pilih atau tambahkan URL —</option>';
+  
+  cachedGASList.forEach((item) => {
+    const opt = document.createElement('option');
+    opt.value = item.url;
+    opt.textContent = item.name;
+    sel.appendChild(opt);
+  });
+  
+  if (active && cachedGASList.some(i => i.url === active)) {
+    sel.value = active;
+  } else if (cachedGASList.length > 0) {
+    sel.value = cachedGASList[0].url;
+    localStorage.setItem('gasActive', sel.value);
+  }
+  
+  document.getElementById('btnDelGAS').style.display = cachedGASList.length > 0 ? 'flex' : 'none';
+}
+
+function onSelectGAS() {
+  const sel = document.getElementById('selectGAS');
+  localStorage.setItem('gasActive', sel.value);
+}
+
+async function tambahGAS() {
+  const nama = prompt('Beri nama untuk URL ini (misal: "Produksi Mei 2026"):');
+  if (!nama || !nama.trim()) return;
+  const url = prompt('Paste URL Google Apps Script:');
+  if (!url || !url.trim()) return;
+  
+  if (cachedGASList.some(i => i.url === url.trim())) {
+    alert('URL ini sudah tersimpan!'); return;
+  }
+  
+  // Tampilkan loading state
+  document.getElementById('selectGAS').innerHTML = '<option>⏳ Menyimpan ke cloud...</option>';
+  
+  const newList = [...cachedGASList, { name: nama.trim(), url: url.trim() }];
+  await saveGASListToSupabase(newList);
+  
+  localStorage.setItem('gasActive', url.trim());
+  renderGASDropdown();
+}
+
+async function hapusGAS() {
+  const sel = document.getElementById('selectGAS');
+  const urlToDelete = sel.value;
+  if (!urlToDelete) return;
+  const item = cachedGASList.find(i => i.url === urlToDelete);
+  if (!item) return;
+  
+  if (!confirm('Hapus "' + item.name + '" dari daftar di semua perangkat?')) return;
+  
+  // Tampilkan loading state
+  sel.innerHTML = '<option>⏳ Menghapus dari cloud...</option>';
+  
+  const newList = cachedGASList.filter(i => i.url !== urlToDelete);
+  await saveGASListToSupabase(newList);
+  
+  localStorage.removeItem('gasActive');
+  renderGASDropdown();
+}
+
+function getActiveGASUrl() {
+  return document.getElementById('selectGAS').value || '';
+}
+
+// ===== KEEP-ALIVE: Mencegah Supabase auto-pause =====
+async function keepAlivePing() {
+  try {
+    await supabaseClient.from('app_settings').select('setting_key').limit(1);
+    console.log('[Keep-Alive] Ping OK —', new Date().toLocaleString('id-ID'));
+  } catch (e) {
+    console.warn('[Keep-Alive] Ping gagal:', e.message);
+  }
+}
+
+// Ping setiap 4 jam selama halaman terbuka
+setInterval(keepAlivePing, 4 * 60 * 60 * 1000);
+
+// Ping saat tab kembali aktif (setelah user pindah tab lalu balik)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') keepAlivePing();
+});
+
+// Auto-set tanggal hari ini + load GAS URLs saat halaman dimuat
+(function() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('inputDate').value = yyyy + '-' + mm + '-' + dd;
+    updateTanggalFields();
+    
+    // Tampilkan loading state sementara mengambil dari Supabase
+    document.getElementById('selectGAS').innerHTML = '<option>⏳ Memuat data tersimpan...</option>';
+    loadGASList();
+
+    // Ping awal saat halaman dimuat
+    keepAlivePing();
+  });
+})();
+
+
+const SHIFTS = {
+  1: { label: 'Shift 1 (05:00 – 13:00)', hours: [5,6,7,8,9,10,11,12], file2needed: false, info: 'Menggunakan <b>1 file PDF</b> — jam 05:00 s.d. 12:59' },
+  2: { label: 'Shift 2 (13:00 – 21:00)', hours: [13,14,15,16,17,18,19,20], file2needed: false, info: 'Menggunakan <b>1 file PDF</b> — jam 13:00 s.d. 20:59' },
+  3: { label: 'Shift 3 (21:00 – 05:00)', hours: [21,22,23], hours2: [0,1,2,3,4], file2needed: true, info: 'Menggunakan <b>2 file PDF</b> — jam 21:00–23:59 dari file hari ini, jam 00:00–04:59 dari file hari berikutnya' }
+};
+
+function selectShift(n) {
+  selectedShift = n;
+  document.querySelectorAll('.shift-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.shift-btn[data-shift="${n}"]`).classList.add('active');
+  const info = document.getElementById('shiftInfo');
+  info.innerHTML = SHIFTS[n].info; info.classList.add('show');
+  
+  if (n === 3) {
+    document.getElementById('zone1Label').textContent = 'PDF Hari Ini (jam 21–23)';
+    document.getElementById('zone2Label').textContent = 'PDF Hari Berikutnya (jam 00–04)';
+    document.getElementById('zone2Name').textContent = 'Seret atau klik pilih file';
+  } else {
+    document.getElementById('zone1Label').textContent = 'File PDF Laporan';
+    document.getElementById('zone2Label').textContent = 'File PDF Hari Berikutnya';
+    document.getElementById('zone2Name').textContent = 'Opsional (untuk Shift 3)';
+  }
+  updateBtnState();
+}
+
+function onFileChange(n) {
+  const input = document.getElementById(`file${n}`);
+  const file = input.files[0];
+  if (!file) return;
+  if (n === 1) pdfData1 = file; else pdfData2 = file;
+  const zone = document.getElementById(`zone${n}`);
+  zone.classList.add('loaded');
+  document.getElementById(`zone${n}Name`).textContent = file.name;
+  updateBtnState();
+}
+
+function onDragOver(e, n) { e.preventDefault(); document.getElementById(`zone${n}`).classList.add('drag-over'); }
+function onDragLeave(n) { document.getElementById(`zone${n}`).classList.remove('drag-over'); }
+function onDrop(e, n) {
+  e.preventDefault(); document.getElementById(`zone${n}`).classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.name.endsWith('.pdf')) return;
+  if (n === 1) pdfData1 = file; else pdfData2 = file;
+  const zone = document.getElementById(`zone${n}`);
+  zone.classList.add('loaded');
+  document.getElementById(`zone${n}Name`).textContent = file.name;
+  updateBtnState();
+}
+
+function updateBtnState() {
+  const btn = document.getElementById('btnProses');
+  const shift = selectedShift;
+  if (!shift || !pdfData1 || (shift === 3 && !pdfData2)) { btn.disabled = true; return; }
+  btn.disabled = false;
+}
+
+function log(msg, type='info') {
+  const area = document.getElementById('logArea');
+  area.classList.add('show');
+  const p = document.createElement('p');
+  p.className = `log-line log-${type}`;
+  p.textContent = `[${new Date().toLocaleTimeString('id-ID')}] ${msg}`;
+  area.appendChild(p);
+  area.scrollTop = area.scrollHeight;
+}
+
+function clearLog() { const area = document.getElementById('logArea'); area.innerHTML = ''; area.classList.remove('show'); }
+function setStatus(id, msg, type) {
+  const el = document.getElementById(id); el.textContent = msg; el.className = `status ${type} show`;
+}
+
+async function parsePDFByCoordinates(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const typedArray = new Uint8Array(arrayBuffer);
+  const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+  let fileResults = {};
+  for(let j = 0; j < 24; j++) {
+    fileResults[j] = { motor: 0, mobil: 0, bus_truck: 0, inap: 0, vip: 0 };
+  }
+
+  let globalCashX = null, globalCashlessX = null;
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    textContent.items.forEach(it => {
+      if(it.str.trim() === 'Cash') globalCashX = it.transform[5];
+      if(it.str.trim() === 'Cashless') globalCashlessX = it.transform[5];
+    });
+  }
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    let items = textContent.items;
+    
+    let isDetail = false;
+    items.forEach(it => { if(it.str.includes('DETAIL')) isDetail = true; });
+    if(!isDetail) continue;
+
+    let sections = [];
+    let currentSection = [];
+    items.forEach(it => {
+      if (it.str.includes('Jenis Kendaraan:')) {
+        if (currentSection.length > 0) sections.push(currentSection);
+        currentSection = [];
+      }
+      currentSection.push(it);
+    });
+    if (currentSection.length > 0) sections.push(currentSection);
+
+    sections.forEach(sectionItems => {
+      let fullText = sectionItems.map(it => it.str.trim()).join(' ');
+      let category = null;
+      if(fullText.includes('Jenis Kendaraan: MOTORCYCLE')) category = 'motor';
+      else if(fullText.includes('Jenis Kendaraan: CAR')) category = 'mobil';
+      else if(fullText.includes('Jenis Kendaraan: BUS')) category = 'bus_truck';
+      else if(fullText.includes('Jenis Kendaraan: TRUCK')) category = 'bus_truck';
+      else if(fullText.includes('Jenis Kendaraan: BOX')) category = 'bus_truck';
+      else if(fullText.includes('Jenis Kendaraan: INAP')) category = 'inap';
+      else if(fullText.includes('Jenis Kendaraan: VIP')) category = 'vip';
+      if(!category) return;
+
+      let hourX = {};
+      sectionItems.forEach(it => {
+        let m = it.str.match(/^(\d{2}):00:00/);
+        if(m) hourX[parseInt(m[1], 10)] = it.transform[4];
+      });
+
+      for(let jam = 0; jam < 24; jam++) {
+        if(hourX[jam] === undefined) continue;
+        let x = hourX[jam];
+        sectionItems.forEach(it => {
+          let itX = it.transform[4];
+          let itY = it.transform[5];
+          if(Math.abs(itX - x) < 5) {
+            let val = parseInt(it.str.replace(/,/g, '')) || 0;
+            if(globalCashlessX !== null && Math.abs(itY - globalCashlessX) < 15) {
+              fileResults[jam][category] += val;
+            }
+            if(globalCashX !== null && Math.abs(itY - globalCashX) < 15) {
+              fileResults[jam][category] += val;
+            }
+          }
+        });
+      }
+    });
+  }
+  return fileResults;
+}
+
+function calcTotals(data1, data2, hours1, hours2) {
+  const totals = { motor: 0, mobil: 0, bus_truck: 0, inap: 0, vip: 0, hourlyData: {} };
+  const allHours = hours2 ? [...hours1, ...hours2] : [...hours1];
+  for (const h of allHours) totals.hourlyData[h] = { motor: 0, mobil: 0, bus_truck: 0, inap: 0, vip: 0 };
+
+  const sumData = (data, hours) => {
+    if (!data || !hours) return;
+    for (const h of hours) {
+      totals.motor += data[h].motor; totals.hourlyData[h].motor += data[h].motor;
+      totals.mobil += data[h].mobil; totals.hourlyData[h].mobil += data[h].mobil;
+      totals.bus_truck += data[h].bus_truck; totals.hourlyData[h].bus_truck += data[h].bus_truck;
+      totals.inap += data[h].inap; totals.hourlyData[h].inap += data[h].inap;
+      totals.vip += data[h].vip; totals.hourlyData[h].vip += data[h].vip;
+    }
+  };
+
+  sumData(data1, hours1);
+  sumData(data2, hours2);
+  totals.total = totals.motor + totals.mobil + totals.bus_truck + totals.inap + totals.vip;
+  return totals;
+}
+
+async function prosesPDF() {
+  clearLog(); document.getElementById('resultSection').classList.remove('show'); document.getElementById('btnKirim').disabled = true; lastResult = null;
+  const shift = selectedShift; const shiftConf = SHIFTS[shift];
+  setStatus('statusProses', '⏳ Membaca PDF...', 'loading'); log(`Memulai proses Shift ${shift}`, 'info');
+
+  try {
+    let data1 = await parsePDFByCoordinates(pdfData1);
+    let data2 = null;
+    if (shift === 3 && pdfData2) data2 = await parsePDFByCoordinates(pdfData2);
+    
+    const totals = calcTotals(data1, data2, shiftConf.hours, shift === 3 ? shiftConf.hours2 : null);
+    lastResult = totals; tampilkanHasil(totals, shift);
+    setStatus('statusProses', '✓ Berhasil dihitung.', 'success');
+  } catch(err) { setStatus('statusProses', `✗ Error: ${err.message}`, 'error'); }
+}
+
+function tampilkanHasil(t, shift) {
+  document.getElementById('resultDate').textContent = document.getElementById('inputTanggal').value;
+  document.getElementById('resultShift').textContent = SHIFTS[shift].label;
+  const tbody = document.getElementById('resultBody'); tbody.innerHTML = '';
+  
+  [ {l:'Motor', v:t.motor}, {l:'Mobil', v:t.mobil}, {l:'Bus/Truck/Box', v:t.bus_truck}, {l:'INAP', v:t.inap}, {l:'VIP', v:t.vip} ].forEach(r => {
+    tbody.innerHTML += `<tr><td class="td-label">${r.l}</td><td class="td-num">${r.v.toLocaleString()}</td></tr>`;
+  });
+  tbody.innerHTML += `<tr class="total-row"><td class="td-total-label">TOTAL</td><td class="td-num td-total">${t.total.toLocaleString()}</td></tr>`;
+  document.getElementById('resultSection').classList.add('show'); document.getElementById('btnKirim').disabled = false;
+}
+
+async function kirimKeSheet() {
+  if (!lastResult) return;
+  const url = getActiveGASUrl();
+  const tanggal = document.getElementById('inputTanggal').value.trim().toUpperCase();
+  setStatus('statusKirim', '⏳ Mengirim...', 'loading'); document.getElementById('btnKirim').disabled = true;
+
+  try {
+    const payload = {
+        tanggal: tanggal,
+        shift: selectedShift,
+        ...lastResult
+    };
+    
+    const resp = await fetch(url, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+        redirect: 'follow'
+    });
+    
+    const textResp = await resp.text();
+    let balasan;
+    try {
+        let jsonResp = JSON.parse(textResp);
+        if (jsonResp.status === 'ok') balasan = jsonResp.message || 'Berhasil';
+        else throw new Error(jsonResp.message || textResp);
+    } catch(e) {
+        if(e.message.includes('Unexpected token') || e.message.includes('is not valid JSON')) {
+            balasan = textResp; // Plain text
+        } else {
+            balasan = e.message || textResp;
+        }
+        if(balasan.startsWith('Gagal:')) throw new Error(balasan);
+    }
+
+    setStatus('statusKirim', `✓ ${balasan}`, 'success');
+  } catch(err) { 
+    let errorMsg = err.message;
+    if (errorMsg.startsWith("Gagal:")) {
+        setStatus('statusKirim', `✗ Ditolak Spreadsheet: ${errorMsg}`, 'error'); 
+    } else {
+        setStatus('statusKirim', `✗ Gagal: ${errorMsg}`, 'error'); 
+    }
+  }
+  document.getElementById('btnKirim').disabled = false;
+}
+</script>
+</body>
+</html>
