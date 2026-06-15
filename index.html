@@ -101,6 +101,11 @@
   .gas-btn:hover { border-color: var(--accent); color: var(--text); }
   .gas-btn-add:hover { border-color: var(--accent3); color: var(--accent3); }
   .gas-btn-del:hover { border-color: #ef4444; color: #ef4444; }
+
+  .nav-menu { display: flex; gap: 4px; margin-bottom: 16px; }
+  .nav-link { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: none; padding: 6px 14px; border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); transition: all 0.15s; }
+  .nav-link:hover { color: var(--text); border-color: var(--accent); }
+  .nav-link.active { color: var(--accent); border-color: var(--accent); background: rgba(0,212,255,0.08); }
 </style>
 </head>
 <body>
@@ -108,6 +113,10 @@
 
   <header>
     <div class="header-badge">PT Angkasa Pura Indonesia</div>
+    <nav class="nav-menu">
+      <a href="index.html" class="nav-link active">Produksi Parkir</a>
+      <a href="statistik.html" class="nav-link">Statistik Parkir</a>
+    </nav>
     <h1>Laporan Produksi <span>Parkir</span></h1>
     <div class="subtitle">BANDARA INTERNASIONAL SYAMSUDIN NOOR — BANJARBARU</div>
   </header>

@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistik Parkir — Syamsudin Noor</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+  :root { --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335; --border: #1e2d44; --accent: #00d4ff; --accent2: #ff6b35; --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  .container { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  /* === NAV === */
+  .nav-menu { display: flex; gap: 4px; margin-bottom: 16px; }
+  .nav-link { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: none; padding: 6px 14px; border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); transition: all 0.15s; }
+  .nav-link:hover { color: var(--text); border-color: var(--accent); }
+  .nav-link.active { color: var(--accent); border-color: var(--accent); background: rgba(0,212,255,0.08); }
+
+  /* === HEADER === */
+  header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  .header-badge { display: inline-block; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--accent); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 4px 12px; border-radius: 2px; margin-bottom: 12px; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(20px, 4vw, 30px); font-weight: 800; line-height: 1.2; color: #fff; letter-spacing: -0.5px; }
+  h1 span { color: var(--accent); }
+  .subtitle { margin-top: 6px; font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
+
+  /* === SECTIONS === */
+  .section-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+
+  /* === UPLOAD === */
+  .upload-zone { border: 1px dashed var(--border); border-radius: 3px; padding: 28px 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; background: var(--surface2); }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(0,212,255,0.05); }
+  .upload-zone.loaded { border-color: var(--accent3); border-style: solid; background: rgba(124,252,110,0.04); }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 4px; }
+  .upload-filename { font-size: 11px; color: var(--accent3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; margin: 0 auto; }
+
+  /* === DETECTED INFO === */
+  .detected-info { margin-top: 16px; display: none; }
+  .detected-info.show { display: block; }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
+  .field label { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .field input, .field select { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 12px; border-radius: 3px; outline: none; transition: border-color 0.2s; }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field-full { grid-column: 1 / -1; }
+
+  /* === BUTTONS === */
+  .btn-primary { width: 100%; background: var(--accent); color: #000; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+  .btn-primary:hover:not(:disabled) { background: #33dbff; transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  .btn-download { background: var(--accent3); color: #000; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px 20px; border-radius: 3px; cursor: pointer; transition: all 0.15s; margin-top: 16px; width: 100%; }
+  .btn-download:hover:not(:disabled) { background: #8fff85; transform: translateY(-1px); }
+  .btn-download:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  .btn-danger { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; padding: 8px 16px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+  .btn-small { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 12px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+  .btn-small:hover { border-color: var(--accent); color: var(--text); }
+
+  /* === STATUS === */
+  .status { font-size: 12px; padding: 10px 14px; border-radius: 3px; margin-top: 12px; display: none; }
+  .status.show { display: block; }
+  .status.loading { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--accent); }
+  .status.success { background: rgba(124,252,110,0.1); border: 1px solid rgba(124,252,110,0.3); color: var(--accent3); }
+  .status.error { background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.3); color: var(--accent2); }
+
+  /* === TABLES === */
+  .table-wrap { overflow-x: auto; margin: 12px -4px; padding: 0 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: var(--surface2); padding: 8px 10px; text-align: left; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th.num { text-align: right; }
+  td { padding: 8px 10px; border-bottom: 1px solid rgba(30,45,68,0.5); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .td-label { color: var(--text-dim); }
+  .td-num { text-align: right; font-weight: 500; }
+  .td-total { color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 700; }
+  .td-total-label { color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  tr.total-row { background: rgba(0,212,255,0.04); }
+  .td-zero { color: var(--text-dim); opacity: 0.4; }
+
+  /* === DAY GRID === */
+  .stats-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .stats-count { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--accent); }
+  .stats-label { font-size: 11px; color: var(--text-dim); }
+  .progress-track { flex: 1; min-width: 120px; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent3)); border-radius: 2px; transition: width 0.4s ease; }
+  .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 16px 0; }
+  .day-cell { text-align: center; padding: 10px 4px; border: 1px solid var(--border); border-radius: 3px; font-size: 13px; cursor: pointer; transition: all 0.2s; position: relative; user-select: none; }
+  .day-cell:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .day-cell.filled { border-color: rgba(124,252,110,0.4); background: rgba(124,252,110,0.06); color: var(--accent3); font-weight: 600; }
+  .day-cell.filled::after { content: '✓'; position: absolute; top: 2px; right: 4px; font-size: 8px; color: var(--accent3); }
+  .day-cell.selected { border-color: var(--accent); background: rgba(0,212,255,0.12); color: var(--accent); box-shadow: 0 0 12px rgba(0,212,255,0.15); }
+  .day-cell.empty { color: var(--text-dim); opacity: 0.5; }
+
+  /* === DETAIL VIEW === */
+  .detail-section { margin-top: 16px; display: none; }
+  .detail-section.show { display: block; }
+  .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .detail-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--accent); }
+
+  /* === MONTH SELECTOR === */
+  .month-selector { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+  .month-selector select { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 12px; border-radius: 3px; outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7fa3' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+  .month-selector select:focus { border-color: var(--accent); }
+
+  /* === SECTIONS VISIBILITY === */
+  .hidden { display: none !important; }
+
+  /* === ANIMATIONS === */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.3s ease forwards; }
+  @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 rgba(0,212,255,0); } 50% { box-shadow: 0 0 16px rgba(0,212,255,0.3); } }
+  .pulse { animation: pulseGlow 1.5s ease infinite; }
+
+  /* === FOOTNOTE === */
+  .footnote { margin-top: 32px; font-size: 10px; color: var(--text-dim); text-align: center; letter-spacing: 1px; line-height: 1.8; }
+  .pill { display: inline-block; padding: 2px 8px; background: rgba(255,255,255,0.05); border-radius: 2px; font-size: 10px; color: var(--text-dim); border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-badge">PT Angkasa Pura Indonesia</div>
+    <nav class="nav-menu">
+      <a href="index.html" class="nav-link">Produksi Parkir</a>
+      <a href="statistik.html" class="nav-link active">Statistik Parkir</a>
+    </nav>
+    <h1>Statistik <span>Parkir</span></h1>
+    <div class="subtitle">BANDARA INTERNASIONAL SYAMSUDIN NOOR — BANJARBARU</div>
+  </header>
+
+  <!-- UPLOAD SECTION -->
+  <div class="section-label">Upload Data Harian</div>
+  <div class="card">
+    <div class="upload-zone" id="uploadZone" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave()">
+      <input type="file" accept=".xlsx,.xls" id="fileInput" onchange="onFileSelect(event)">
+      <div class="upload-icon">📊</div>
+      <span class="upload-label">Upload File Statistik Harian</span>
+      <div class="upload-filename" id="fileName">Seret atau klik pilih file .xlsx</div>
+    </div>
+
+    <div class="detected-info" id="detectedInfo">
+      <div class="settings-grid" style="margin-top:16px">
+        <div class="field">
+          <label>Tanggal</label>
+          <input type="number" id="inputDay" min="1" max="31" value="1">
+        </div>
+        <div class="field">
+          <label>Bulan & Tahun</label>
+          <input type="text" id="inputMonthYear" readonly style="color:var(--accent);cursor:default;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIEW SECTION -->
+  <div id="previewSection" class="hidden">
+    <div class="section-label">Preview Data</div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Kategori</th>
+              <th class="num">0-1</th><th class="num">1-2</th><th class="num">2-3</th>
+              <th class="num">3-4</th><th class="num">4-5</th><th class="num">5-6</th>
+              <th class="num">6-7</th><th class="num">7-8</th><th class="num">8-9</th>
+              <th class="num">9-10</th><th class="num">10-11</th><th class="num">11-12</th>
+              <th class="num">&gt;12</th><th class="num">Total</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
+      <button class="btn-primary pulse" id="btnSave" onclick="onSave()">💾 SIMPAN KE REKAP BULANAN</button>
+      <div class="status" id="statusSave"></div>
+    </div>
+  </div>
+
+  <!-- REKAP BULANAN SECTION -->
+  <div class="section-label">Rekap Bulanan</div>
+  <div class="card">
+    <div class="month-selector">
+      <select id="selectMonth" onchange="onMonthChange()"></select>
+    </div>
+
+    <div class="stats-bar">
+      <div>
+        <div class="stats-count" id="statsCount">0 / 31</div>
+        <div class="stats-label">hari terisi</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="day-grid" id="dayGrid"></div>
+
+    <!-- DETAIL VIEW -->
+    <div class="detail-section" id="detailSection">
+      <div class="detail-header">
+        <div class="detail-title" id="detailTitle">—</div>
+        <button class="btn-danger" id="btnDelete" onclick="onDeleteDay()">✕ Hapus</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Kategori</th>
+              <th class="num">0-1</th><th class="num">1-2</th><th class="num">2-3</th>
+              <th class="num">3-4</th><th class="num">4-5</th><th class="num">5-6</th>
+              <th class="num">6-7</th><th class="num">7-8</th><th class="num">8-9</th>
+              <th class="num">9-10</th><th class="num">10-11</th><th class="num">11-12</th>
+              <th class="num">&gt;12</th><th class="num">Total</th>
+            </tr>
+          </thead>
+          <tbody id="detailBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <button class="btn-download" id="btnDownload" onclick="onDownload()" disabled>⬇ DOWNLOAD REKAP EXCEL</button>
+  </div>
+
+  <div class="footnote">
+    <span class="pill">CSL</span> = Casual &nbsp;·&nbsp;
+    <span class="pill">PASS</span> = Langganan &nbsp;·&nbsp;
+    <span class="pill">BOX+TRUCK+BUS</span> = Gabungan<br><br>
+    Upload file <strong>Statistik Harian (.xlsx)</strong> setiap hari → data otomatis terakumulasi per bulan<br>
+    Download file rekap kapan saja untuk laporan bulanan
+  </div>
+
+</div>
+
+<script>
+// ===== CONSTANTS =====
+const BULAN_INDO = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const BULAN_MAP = {};
+BULAN_INDO.forEach((b, i) => { BULAN_MAP[b.toLowerCase()] = i + 1; });
+
+// Input column mapping (0-indexed SheetJS columns)
+const INPUT_COLS = {
+  CAR_CSL:   2,   // C
+  CAR_PASS:  3,   // D
+  MOTO_CSL:  4,   // E
+  MOTO_PASS: 5,   // F
+  TNI_CSL:   7,   // H
+  TNI_PASS:  8,   // I
+  BOX_CSL:   9,   // J
+  BOX_PASS:  11,  // L
+  TRUCK_CSL: 12,  // M
+  TRUCK_PASS:13,  // N
+  BUS_CSL:   16,  // Q
+  BUS_PASS:  17,  // R
+};
+
+// Output block definitions
+const BLOCKS = [
+  { title: 'MOTOR - CASUAL',          key: 'motor_casual',     label: 'Motor (Casual)',      isTni: false },
+  { title: 'MOTOR - LANGGANAN / PASS', key: 'motor_pass',      label: 'Motor (Pass)',        isTni: false },
+  { title: 'MOBIL - CASUAL',          key: 'mobil_casual',     label: 'Mobil (Casual)',      isTni: false },
+  { title: 'MOBIL - LANGGANAN',       key: 'mobil_pass',       label: 'Mobil (Pass)',        isTni: false },
+  { title: 'BOX/TRUK/BUS - CASUAL',   key: 'bus_truck_casual', label: 'Bus/Truk/Box (Csl)', isTni: false },
+  { title: 'BOX/TRUK/BUS - LANGGANAN',key: 'bus_truck_pass',   label: 'Bus/Truk/Box (Pass)',isTni: false },
+  { title: 'TAXI CASUAL',             key: 'taxi_casual',      label: 'Taxi (Casual)',       isTni: false },
+  { title: 'TNI/POLRI',               key: 'tni_polri',        label: 'TNI/Polri',           isTni: true  },
+];
+
+const CATEGORIES = BLOCKS.map(b => b.key);
+
+// ===== STATE =====
+let currentUpload = null;   // { day, month, year, monthName, data:{key: [13 values]} }
+let selectedMonthKey = null; // 'YYYY_MM'
+let selectedDay = null;
+
+// ===== FILE UPLOAD HANDLERS =====
+function onDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+function onDragLeave() { document.getElementById('uploadZone').classList.remove('drag-over'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) processFile(file);
+}
+function onFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+async function processFile(file) {
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('uploadZone').classList.add('loaded');
+
+  // Parse date from filename: "Statistik DD Bulan YYYY.xlsx"
+  const dateMatch = file.name.match(/Statistik\s+(\d+)\s+(\w+)\s+(\d{4})/i);
+  let day = 1, month = 1, year = 2026, monthName = 'Januari';
+  if (dateMatch) {
+    day = parseInt(dateMatch[1]);
+    const bulanStr = dateMatch[2].toLowerCase();
+    if (BULAN_MAP[bulanStr]) {
+      month = BULAN_MAP[bulanStr];
+      monthName = BULAN_INDO[month - 1];
+    }
+    year = parseInt(dateMatch[3]);
+  } else {
+    // Fallback: use current date
+    const now = new Date();
+    day = now.getDate();
+    month = now.getMonth() + 1;
+    year = now.getFullYear();
+    monthName = BULAN_INDO[month - 1];
+  }
+
+  document.getElementById('inputDay').value = day;
+  document.getElementById('inputMonthYear').value = `${monthName} ${year}`;
+  document.getElementById('detectedInfo').classList.add('show');
+
+  // Parse Excel data
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const data = new Uint8Array(arrayBuffer);
+    const wb = XLSX.read(data, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const parsed = parseInputExcel(ws);
+
+    currentUpload = { day, month, year, monthName, data: parsed };
+
+    renderPreview(parsed);
+    document.getElementById('previewSection').classList.remove('hidden');
+    document.getElementById('previewSection').classList.add('fade-in');
+
+    // Auto-select the month
+    selectedMonthKey = `${year}_${String(month).padStart(2, '0')}`;
+    updateMonthSelector();
+    renderDayGrid();
+  } catch (err) {
+    setStatus('statusSave', `✗ Gagal membaca file: ${err.message}`, 'error');
+  }
+}
+
+// ===== EXCEL PARSING =====
+function getHourIndex(text) {
+  text = text.trim().toLowerCase();
+  if (['overnight', 'lost ticket', 'cancelled', 'range'].includes(text)) return null;
+  if (!text.includes('jam')) return null;
+
+  // Pattern: <=Njam or <=N jam
+  const upperMatch = text.match(/<=\s*(\d+)\s*jam/);
+  if (upperMatch) {
+    const upper = parseInt(upperMatch[1]);
+    if (upper <= 12) return upper - 1; // 0-indexed: 0=0-1h, 1=1-2h, ..., 11=11-12h
+    return 12; // everything >12h goes to index 12
+  }
+
+  // Pattern: >Njam (final bucket like >120 jam)
+  const lowerMatch = text.match(/>\s*(\d+)\s*jam/);
+  if (lowerMatch) return 12;
+
+  return null;
+}
+
+function parseInputExcel(ws) {
+  const result = {};
+  CATEGORIES.forEach(key => { result[key] = new Array(13).fill(0); });
+
+  // Helper to read a numeric cell value
+  const getVal = (r, c) => {
+    const cell = ws[XLSX.utils.encode_cell({ r, c })];
+    if (!cell) return 0;
+    const v = parseFloat(cell.v);
+    return isNaN(v) ? 0 : v;
+  };
+
+  // Scan all rows for range text in column B (c:1)
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:Z60');
+  for (let r = 0; r <= range.e.r; r++) {
+    const rangeCell = ws[XLSX.utils.encode_cell({ r, c: 1 })];
+    if (!rangeCell || !rangeCell.v) continue;
+    const rangeText = String(rangeCell.v);
+    const hourIdx = getHourIndex(rangeText);
+    if (hourIdx === null) continue;
+
+    // MOTORCYCLE → motor_casual / motor_pass
+    result.motor_casual[hourIdx]     += getVal(r, INPUT_COLS.MOTO_CSL);
+    result.motor_pass[hourIdx]       += getVal(r, INPUT_COLS.MOTO_PASS);
+
+    // CAR → mobil_casual / mobil_pass
+    result.mobil_casual[hourIdx]     += getVal(r, INPUT_COLS.CAR_CSL);
+    result.mobil_pass[hourIdx]       += getVal(r, INPUT_COLS.CAR_PASS);
+
+    // BOX + TRUCK + BUS → bus_truck_casual / bus_truck_pass
+    result.bus_truck_casual[hourIdx] += getVal(r, INPUT_COLS.BOX_CSL) + getVal(r, INPUT_COLS.TRUCK_CSL) + getVal(r, INPUT_COLS.BUS_CSL);
+    result.bus_truck_pass[hourIdx]   += getVal(r, INPUT_COLS.BOX_PASS) + getVal(r, INPUT_COLS.TRUCK_PASS) + getVal(r, INPUT_COLS.BUS_PASS);
+
+    // TNI/POLRI (Csl + Pass combined)
+    result.tni_polri[hourIdx]        += getVal(r, INPUT_COLS.TNI_CSL) + getVal(r, INPUT_COLS.TNI_PASS);
+
+    // TAXI CASUAL — no input data, stays 0
+  }
+
+  return result;
+}
+
+// ===== LOCALSTORAGE MANAGEMENT =====
+function getMonthKey(year, month) {
+  return `statistik_${year}_${String(month).padStart(2, '0')}`;
+}
+
+function loadMonth(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { console.error('loadMonth error:', e); }
+  return null;
+}
+
+function saveMonth(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function getAvailableMonths() {
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('statistik_')) keys.push(k);
+  }
+  keys.sort().reverse();
+  return keys;
+}
+
+function ensureMonthData(year, month, monthName) {
+  const key = getMonthKey(year, month);
+  let data = loadMonth(key);
+  if (!data) {
+    data = { year, month, monthName, days: {} };
+    saveMonth(key, data);
+  }
+  return data;
+}
+
+// ===== UI RENDERING =====
+function renderPreview(data) {
+  const tbody = document.getElementById('previewBody');
+  tbody.innerHTML = '';
+  BLOCKS.forEach(block => {
+    if (block.key === 'taxi_casual') return; // skip taxi in preview
+    const vals = data[block.key] || new Array(13).fill(0);
+    const total = vals.reduce((s, v) => s + v, 0);
+    let row = `<tr><td class="td-label">${block.label}</td>`;
+    vals.forEach(v => {
+      row += `<td class="td-num ${v === 0 ? 'td-zero' : ''}">${v}</td>`;
+    });
+    row += `<td class="td-num td-total">${total}</td></tr>`;
+    tbody.innerHTML += row;
+  });
+
+  // Grand total row
+  const grandTotal = BLOCKS.reduce((sum, block) => {
+    if (block.key === 'taxi_casual') return sum;
+    return sum + (data[block.key] || []).reduce((s, v) => s + v, 0);
+  }, 0);
+  tbody.innerHTML += `<tr class="total-row"><td class="td-total-label">TOTAL</td>`;
+  for (let i = 0; i < 13; i++) {
+    let colSum = 0;
+    BLOCKS.forEach(block => {
+      if (block.key === 'taxi_casual') return;
+      colSum += (data[block.key] || [])[i] || 0;
+    });
+    tbody.innerHTML += `<td class="td-num td-total">${colSum}</td>`;
+  }
+  tbody.innerHTML += `<td class="td-num td-total">${grandTotal}</td></tr>`;
+}
+
+function updateMonthSelector() {
+  const sel = document.getElementById('selectMonth');
+  const months = getAvailableMonths();
+
+  // Ensure current month is in the list
+  const now = new Date();
+  const currentKey = getMonthKey(now.getFullYear(), now.getMonth() + 1);
+  if (!months.includes(currentKey)) months.push(currentKey);
+
+  // If upload has a different month, ensure it's there too
+  if (currentUpload) {
+    const uploadKey = getMonthKey(currentUpload.year, currentUpload.month);
+    if (!months.includes(uploadKey)) months.push(uploadKey);
+  }
+
+  const unique = [...new Set(months)].sort().reverse();
+  sel.innerHTML = '';
+  unique.forEach(key => {
+    const parts = key.replace('statistik_', '').split('_');
+    const yr = parseInt(parts[0]);
+    const mn = parseInt(parts[1]);
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = `${BULAN_INDO[mn - 1]} ${yr}`;
+    sel.appendChild(opt);
+  });
+
+  if (selectedMonthKey && unique.includes(selectedMonthKey)) {
+    sel.value = selectedMonthKey;
+  } else if (unique.length > 0) {
+    selectedMonthKey = unique[0];
+    sel.value = unique[0];
+  }
+}
+
+function renderDayGrid() {
+  const grid = document.getElementById('dayGrid');
+  grid.innerHTML = '';
+  const data = loadMonth(selectedMonthKey);
+  const filledDays = data ? Object.keys(data.days) : [];
+  let filledCount = 0;
+
+  for (let d = 1; d <= 31; d++) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+    cell.textContent = d;
+
+    const isFilled = filledDays.includes(String(d));
+    if (isFilled) {
+      cell.classList.add('filled');
+      filledCount++;
+    } else {
+      cell.classList.add('empty');
+    }
+    if (selectedDay === d) cell.classList.add('selected');
+
+    cell.onclick = () => {
+      selectedDay = d;
+      renderDayGrid();
+      if (isFilled) showDayDetail(d, data.days[String(d)]);
+      else hideDayDetail();
+    };
+
+    grid.appendChild(cell);
+  }
+
+  // Update stats
+  document.getElementById('statsCount').textContent = `${filledCount} / 31`;
+  document.getElementById('progressFill').style.width = `${(filledCount / 31) * 100}%`;
+  document.getElementById('btnDownload').disabled = filledCount === 0;
+}
+
+function showDayDetail(day, dayData) {
+  const section = document.getElementById('detailSection');
+  section.classList.add('show');
+
+  // Get month name for title
+  const parts = selectedMonthKey.replace('statistik_', '').split('_');
+  const mn = parseInt(parts[1]);
+  const yr = parseInt(parts[0]);
+  document.getElementById('detailTitle').textContent = `Tanggal ${day} ${BULAN_INDO[mn - 1]} ${yr}`;
+
+  const tbody = document.getElementById('detailBody');
+  tbody.innerHTML = '';
+  BLOCKS.forEach(block => {
+    const vals = dayData[block.key] || new Array(13).fill(0);
+    const total = vals.reduce((s, v) => s + v, 0);
+    let row = `<tr><td class="td-label">${block.label}</td>`;
+    vals.forEach(v => {
+      row += `<td class="td-num ${v === 0 ? 'td-zero' : ''}">${v}</td>`;
+    });
+    row += `<td class="td-num td-total">${total}</td></tr>`;
+    tbody.innerHTML += row;
+  });
+}
+
+function hideDayDetail() {
+  document.getElementById('detailSection').classList.remove('show');
+}
+
+function setStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = `status ${type} show`;
+}
+
+// ===== EVENT HANDLERS =====
+function onSave() {
+  if (!currentUpload) return;
+
+  const day = parseInt(document.getElementById('inputDay').value);
+  if (day < 1 || day > 31 || isNaN(day)) {
+    setStatus('statusSave', '✗ Tanggal tidak valid (1-31)', 'error');
+    return;
+  }
+
+  const { month, year, monthName, data } = currentUpload;
+  const key = getMonthKey(year, month);
+  const monthData = ensureMonthData(year, month, monthName);
+
+  // Check if day already has data
+  if (monthData.days[String(day)]) {
+    if (!confirm(`Tanggal ${day} sudah ada data. Timpa dengan data baru?`)) return;
+  }
+
+  monthData.days[String(day)] = data;
+  saveMonth(key, monthData);
+
+  setStatus('statusSave', `✓ Data tanggal ${day} ${monthName} ${year} berhasil disimpan!`, 'success');
+
+  // Refresh grid
+  selectedMonthKey = key;
+  selectedDay = day;
+  updateMonthSelector();
+  renderDayGrid();
+  showDayDetail(day, data);
+
+  // Clear upload state
+  currentUpload = null;
+  document.getElementById('previewSection').classList.add('hidden');
+  document.getElementById('btnSave').classList.remove('pulse');
+
+  // Reset upload zone for next file
+  document.getElementById('uploadZone').classList.remove('loaded');
+  document.getElementById('fileName').textContent = 'Seret atau klik pilih file .xlsx';
+  document.getElementById('detectedInfo').classList.remove('show');
+  document.getElementById('fileInput').value = '';
+}
+
+function onDeleteDay() {
+  if (selectedDay === null || !selectedMonthKey) return;
+  const data = loadMonth(selectedMonthKey);
+  if (!data || !data.days[String(selectedDay)]) return;
+
+  const parts = selectedMonthKey.replace('statistik_', '').split('_');
+  const mn = parseInt(parts[1]);
+  const yr = parseInt(parts[0]);
+
+  if (!confirm(`Hapus data tanggal ${selectedDay} ${BULAN_INDO[mn - 1]} ${yr}?`)) return;
+
+  delete data.days[String(selectedDay)];
+  saveMonth(selectedMonthKey, data);
+
+  selectedDay = null;
+  hideDayDetail();
+  renderDayGrid();
+}
+
+function onMonthChange() {
+  selectedMonthKey = document.getElementById('selectMonth').value;
+  selectedDay = null;
+  hideDayDetail();
+  renderDayGrid();
+}
+
+// ===== OUTPUT EXCEL GENERATION =====
+function generateOutputWorkbook(monthData) {
+  const wb = XLSX.utils.book_new();
+  const rows = [];
+  const { year, month, monthName } = monthData;
+
+  // === Header section (rows 1-10, 0-indexed 0-9) ===
+  rows.push(['PT Angkasa Pura Suport']);                                       // row 1
+  rows.push(['STATISTIK LAMA PARKIR']);                                        // row 2
+  rows.push(['Periode', ':', `${monthName} ${year}`]);                        // row 3
+  rows.push(['Cabang / Lokasi', ':', 'BANDAR UDARA INTERNASIONAL SYAMSUDIN NOOR BANJARBARU']); // row 4
+  rows.push([]);                                                               // row 5
+  rows.push(['Instruksi:']);                                                   // row 6
+  rows.push(['Isilah lembar ini dengan lama parkir']);                         // row 7
+  rows.push(['1.  menyesuaikan setingan tiap cabang menggunakan system CPM']);// row 8
+  rows.push(['2.  menyesuaikan permintaan AP1/Property management.']);        // row 9
+  rows.push([]);                                                               // row 10
+
+  // === 8 Data Blocks ===
+  BLOCKS.forEach((block, idx) => {
+    // Title row
+    rows.push([block.title]);
+
+    // Header row
+    if (block.isTni) {
+      rows.push(['Tgl', '0-1 Jam', '1-2 Jam', '2-3 Jam', '3-4 Jam', '4-5 Jam', '5-6 Jam', '6-7 Jam', null, null, null, null, null, '7-8 Jam', 'Total']);
+    } else {
+      rows.push(['Tgl', '0-1 Jam', '1-2 Jam', '2-3 Jam', '3-4 Jam', '4-5 Jam', '5-6 Jam', '6-7 Jam', '7-8 Jam', '8-9 Jam', '9-10 Jam', '10-11 Jam', '11-12 Jam', '>12 Jam', 'Total']);
+    }
+
+    // 31 data rows (days 1-31)
+    for (let day = 1; day <= 31; day++) {
+      const dayData = monthData.days[String(day)];
+      const vals = dayData ? (dayData[block.key] || new Array(13).fill(0)) : new Array(13).fill(0);
+      const row = [String(day)];
+
+      if (block.isTni) {
+        // TNI: cols B-H = hours 0-6, cols I-M = empty, col N = sum of hours 7-12
+        for (let h = 0; h < 7; h++) row.push(vals[h] || 0);
+        row.push(null, null, null, null, null); // I-M empty
+        let sum78 = 0;
+        for (let h = 7; h < 13; h++) sum78 += (vals[h] || 0);
+        row.push(sum78);
+      } else {
+        for (let h = 0; h < 13; h++) row.push(vals[h] || 0);
+      }
+
+      row.push(null); // col O = Total (formula, added later)
+      rows.push(row);
+    }
+
+    // Total row
+    const totalRow = ['Total'];
+    for (let c = 0; c < 14; c++) totalRow.push(null); // B-O (formulas added later)
+    rows.push(totalRow);
+
+    // Gap row between blocks (except after last)
+    if (idx < BLOCKS.length - 1) rows.push([]);
+  });
+
+  // Create worksheet
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // === Add formulas ===
+  BLOCKS.forEach((block, idx) => {
+    // Block starts at 0-indexed row: 10 + idx * 35
+    const blockRow = 10 + idx * 35;
+    const dataStart = blockRow + 2;  // first data row (0-indexed)
+    const dataEnd = blockRow + 32;   // last data row (0-indexed)
+    const totalRow = blockRow + 33;  // total row (0-indexed)
+
+    // Column O formula for each data row: =SUM(B:N)
+    for (let r = dataStart; r <= dataEnd; r++) {
+      const excelRow = r + 1;
+      const cellRef = XLSX.utils.encode_cell({ r, c: 14 });
+      ws[cellRef] = { t: 'n', f: `SUM(B${excelRow}:N${excelRow})`, v: 0 };
+    }
+
+    // Total row formulas: =SUM(B_start:B_end) for each column B-O
+    const excelStart = dataStart + 1;
+    const excelEnd = dataEnd + 1;
+    for (let c = 1; c <= 14; c++) {
+      const colLetter = XLSX.utils.encode_col(c);
+      const cellRef = XLSX.utils.encode_cell({ r: totalRow, c });
+      ws[cellRef] = { t: 'n', f: `SUM(${colLetter}${excelStart}:${colLetter}${excelEnd})`, v: 0 };
+    }
+  });
+
+  // Set column widths
+  ws['!cols'] = [
+    { wch: 6 },  // A: Tgl
+    { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 },  // B-F
+    { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 },  // G-K
+    { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 },              // L-O
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, '11. Statistik Parkir');
+  return wb;
+}
+
+function onDownload() {
+  if (!selectedMonthKey) return;
+  const data = loadMonth(selectedMonthKey);
+  if (!data || Object.keys(data.days).length === 0) {
+    alert('Tidak ada data untuk didownload.');
+    return;
+  }
+
+  const wb = generateOutputWorkbook(data);
+  const filename = `Statistik Parkir ${data.monthName}.xlsx`;
+  XLSX.writeFile(wb, filename);
+}
+
+// ===== INIT =====
+(function init() {
+  const now = new Date();
+  selectedMonthKey = getMonthKey(now.getFullYear(), now.getMonth() + 1);
+
+  // Ensure current month entry exists
+  ensureMonthData(now.getFullYear(), now.getMonth() + 1, BULAN_INDO[now.getMonth()]);
+
+  updateMonthSelector();
+  renderDayGrid();
+})();
+</script>
+</body>
+</html>
