@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Statistik Parkir — Syamsudin Noor</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
   :root { --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335; --border: #1e2d44; --accent: #00d4ff; --accent2: #ff6b35; --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3; }
@@ -274,7 +275,12 @@ const BLOCKS = [
 
 const CATEGORIES = BLOCKS.map(b => b.key);
 
-// ===== STATE =====
+// ===== STATE & SUPABASE =====
+const supabaseUrl = 'https://nbxcvigngtzeymoleuvc.supabase.co';
+const supabaseKey = 'sb_publishable_C8ce4W1sC4VoDiRKnwkbhw_faMXX5lT';
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+let cloudData = {}; // Cache of all downloaded months
 let currentUpload = null;   // { day, month, year, monthName, data:{key: [13 values]} }
 let selectedMonthKey = null; // 'YYYY_MM'
 let selectedDay = null;
@@ -407,39 +413,41 @@ function parseInputExcel(ws) {
   return result;
 }
 
-// ===== LOCALSTORAGE MANAGEMENT =====
+// ===== CLOUD STORAGE MANAGEMENT =====
 function getMonthKey(year, month) {
   return `statistik_${year}_${String(month).padStart(2, '0')}`;
 }
 
 function loadMonth(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw);
-  } catch (e) { console.error('loadMonth error:', e); }
-  return null;
+  return cloudData[key] || null;
 }
 
-function saveMonth(key, data) {
-  localStorage.setItem(key, JSON.stringify(data));
+async function saveMonth(key, data) {
+  cloudData[key] = data; // Update local cache
+  try {
+    const { data: existing } = await supabaseClient.from('app_settings').select('id').eq('setting_key', key).single();
+    if (existing) {
+      await supabaseClient.from('app_settings').update({ setting_value: data }).eq('id', existing.id);
+    } else {
+      await supabaseClient.from('app_settings').insert([{ setting_key: key, setting_value: data }]);
+    }
+  } catch (e) {
+    console.error('saveMonth error:', e);
+  }
 }
 
 function getAvailableMonths() {
-  const keys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && k.startsWith('statistik_')) keys.push(k);
-  }
+  const keys = Object.keys(cloudData).filter(k => k.startsWith('statistik_'));
   keys.sort().reverse();
   return keys;
 }
 
-function ensureMonthData(year, month, monthName) {
+async function ensureMonthData(year, month, monthName) {
   const key = getMonthKey(year, month);
   let data = loadMonth(key);
   if (!data) {
     data = { year, month, monthName, days: {} };
-    saveMonth(key, data);
+    await saveMonth(key, data);
   }
   return data;
 }
@@ -584,7 +592,7 @@ function setStatus(id, msg, type) {
 }
 
 // ===== EVENT HANDLERS =====
-function onSave() {
+async function onSave() {
   if (!currentUpload) return;
 
   const day = parseInt(document.getElementById('inputDay').value);
@@ -595,17 +603,26 @@ function onSave() {
 
   const { month, year, monthName, data } = currentUpload;
   const key = getMonthKey(year, month);
-  const monthData = ensureMonthData(year, month, monthName);
+
+  document.getElementById('btnSave').disabled = true;
+  setStatus('statusSave', '⏳ Menyimpan ke cloud...', 'loading');
+
+  const monthData = await ensureMonthData(year, month, monthName);
 
   // Check if day already has data
   if (monthData.days[String(day)]) {
-    if (!confirm(`Tanggal ${day} sudah ada data. Timpa dengan data baru?`)) return;
+    if (!confirm(`Tanggal ${day} sudah ada data. Timpa dengan data baru?`)) {
+      document.getElementById('btnSave').disabled = false;
+      document.getElementById('statusSave').classList.remove('show');
+      return;
+    }
   }
 
   monthData.days[String(day)] = data;
-  saveMonth(key, monthData);
+  await saveMonth(key, monthData);
 
-  setStatus('statusSave', `✓ Data tanggal ${day} ${monthName} ${year} berhasil disimpan!`, 'success');
+  setStatus('statusSave', `✓ Data tanggal ${day} ${monthName} ${year} berhasil disimpan ke cloud!`, 'success');
+  document.getElementById('btnSave').disabled = false;
 
   // Refresh grid
   selectedMonthKey = key;
@@ -626,7 +643,7 @@ function onSave() {
   document.getElementById('fileInput').value = '';
 }
 
-function onDeleteDay() {
+async function onDeleteDay() {
   if (selectedDay === null || !selectedMonthKey) return;
   const data = loadMonth(selectedMonthKey);
   if (!data || !data.days[String(selectedDay)]) return;
@@ -635,10 +652,10 @@ function onDeleteDay() {
   const mn = parseInt(parts[1]);
   const yr = parseInt(parts[0]);
 
-  if (!confirm(`Hapus data tanggal ${selectedDay} ${BULAN_INDO[mn - 1]} ${yr}?`)) return;
+  if (!confirm(`Hapus data tanggal ${selectedDay} ${BULAN_INDO[mn - 1]} ${yr} dari cloud?`)) return;
 
   delete data.days[String(selectedDay)];
-  saveMonth(selectedMonthKey, data);
+  await saveMonth(selectedMonthKey, data);
 
   selectedDay = null;
   hideDayDetail();
@@ -766,15 +783,31 @@ function onDownload() {
 }
 
 // ===== INIT =====
-(function init() {
+(async function init() {
+  setStatus('statusSave', '⏳ Menyinkronkan dengan cloud...', 'loading');
+  try {
+    const { data, error } = await supabaseClient.from('app_settings').select('*').like('setting_key', 'statistik_%');
+    if (error) throw error;
+    data.forEach(row => {
+      cloudData[row.setting_key] = row.setting_value;
+    });
+  } catch(e) {
+    setStatus('statusSave', '✗ Gagal memuat data dari cloud', 'error');
+    console.error(e);
+  }
+
   const now = new Date();
   selectedMonthKey = getMonthKey(now.getFullYear(), now.getMonth() + 1);
 
   // Ensure current month entry exists
-  ensureMonthData(now.getFullYear(), now.getMonth() + 1, BULAN_INDO[now.getMonth()]);
+  await ensureMonthData(now.getFullYear(), now.getMonth() + 1, BULAN_INDO[now.getMonth()]);
 
   updateMonthSelector();
   renderDayGrid();
+
+  if (document.getElementById('statusSave').textContent.includes('Menyinkronkan')) {
+    document.getElementById('statusSave').classList.remove('show');
+  }
 })();
 </script>
 </body>
