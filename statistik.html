@@ -130,6 +130,8 @@
   .footnote { margin-top: 32px; font-size: 10px; color: var(--text-dim); text-align: center; letter-spacing: 1px; line-height: 1.8; }
   .pill { display: inline-block; padding: 2px 8px; background: rgba(255,255,255,0.05); border-radius: 2px; font-size: 10px; color: var(--text-dim); border: 1px solid var(--border); }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -693,106 +695,137 @@ function onMonthChange() {
 }
 
 // ===== OUTPUT EXCEL GENERATION =====
-function generateOutputWorkbook(monthData) {
-  const wb = XLSX.utils.book_new();
-  const rows = [];
+async function generateOutputWorkbook(monthData) {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('11. Statistik Parkir');
   const { year, month, monthName } = monthData;
 
-  // === Header section (rows 1-10, 0-indexed 0-9) ===
-  rows.push(['PT Angkasa Pura Suport']);                                       // row 1
-  rows.push(['STATISTIK LAMA PARKIR']);                                        // row 2
-  rows.push(['Periode', ':', `${monthName} ${year}`]);                        // row 3
-  rows.push(['Cabang / Lokasi', ':', 'BANDAR UDARA INTERNASIONAL SYAMSUDIN NOOR BANJARBARU']); // row 4
-  rows.push([]);                                                               // row 5
-  rows.push(['Instruksi:']);                                                   // row 6
-  rows.push(['Isilah lembar ini dengan lama parkir']);                         // row 7
-  rows.push(['1.  menyesuaikan setingan tiap cabang menggunakan system CPM']);// row 8
-  rows.push(['2.  menyesuaikan permintaan AP1/Property management.']);        // row 9
-  rows.push([]);                                                               // row 10
+  // Global styles
+  const fontDefault = { name: 'Tahoma', size: 10 };
+  const fontHeader = { name: 'Arial', size: 10, bold: true };
+  const fontTitle = { name: 'Calibri', size: 11 };
 
-  // === 8 Data Blocks ===
-  BLOCKS.forEach((block, idx) => {
+  // Helper for border
+  const borderThin = {
+    top: { style: 'thin' }, left: { style: 'thin' },
+    bottom: { style: 'thin' }, right: { style: 'thin' }
+  };
+
+  // Header section
+  ws.getCell('A1').value = 'PT Angkasa Pura Suport';
+  ws.getCell('A1').font = fontHeader;
+  ws.getCell('A2').value = 'STATISTIK LAMA PARKIR';
+  ws.getCell('A2').font = fontHeader;
+  ws.getCell('A3').value = 'Periode'; ws.getCell('B3').value = ':'; ws.getCell('C3').value = `${monthName} ${year}`;
+  ws.getCell('A4').value = 'Cabang / Lokasi'; ws.getCell('B4').value = ':'; ws.getCell('C4').value = 'BANDAR UDARA INTERNASIONAL SYAMSUDIN NOOR BANJARBARU';
+  
+  ['A3','B3','C3','A4','B4','C4'].forEach(c => ws.getCell(c).font = fontTitle);
+
+  ws.getCell('A6').value = 'Instruksi:'; ws.getCell('A6').font = fontTitle;
+  ws.getCell('A7').value = 'Isilah lembar ini dengan lama parkir'; ws.getCell('A7').font = fontDefault;
+  ws.getCell('A8').value = '1. menyesuaikan setingan tiap cabang menggunakan system CPM'; ws.getCell('A8').font = fontDefault;
+  ws.getCell('A9').value = '2. menyesuaikan permintaan AP1/Property management.'; ws.getCell('A9').font = fontDefault;
+
+  let currentRow = 11;
+
+  const bgColors = {
+    'motor_casual': 'FFFFFF00',
+    'motor_pass': 'FFCCFFFF',
+    'mobil_casual': 'FFC0C0C0',
+    'mobil_pass': 'FFCCFF33',
+    'bus_truck_casual': 'FFFFFFFF',
+    'bus_truck_pass': 'FF00FFCC',
+    'taxi_casual': 'FFFFFFFF',
+    'tni_polri': 'FFFFFFFF'
+  };
+
+  BLOCKS.forEach(block => {
     // Title row
-    rows.push([block.title]);
-
+    const titleCell = ws.getCell(`A${currentRow}`);
+    titleCell.value = block.title;
+    titleCell.font = { name: 'Tahoma', size: 10, bold: true };
+    
+    const bgColor = bgColors[block.key] || 'FFFFFFFF';
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+    
     // Header row
+    let headers = [];
     if (block.isTni) {
-      rows.push(['Tgl', '0-1 Jam', '1-2 Jam', '2-3 Jam', '3-4 Jam', '4-5 Jam', '5-6 Jam', '6-7 Jam', null, null, null, null, null, '7-8 Jam', 'Total']);
+      headers = ['Tgl', '0-1 Jam', '1-2 Jam', '2-3 Jam', '3-4 Jam', '4-5 Jam', '5-6 Jam', '6-7 Jam', '', '', '', '', '', '7-8 Jam', 'Total'];
     } else {
-      rows.push(['Tgl', '0-1 Jam', '1-2 Jam', '2-3 Jam', '3-4 Jam', '4-5 Jam', '5-6 Jam', '6-7 Jam', '7-8 Jam', '8-9 Jam', '9-10 Jam', '10-11 Jam', '11-12 Jam', '>12 Jam', 'Total']);
+      headers = ['Tgl', '0-1 Jam', '1-2 Jam', '2-3 Jam', '3-4 Jam', '4-5 Jam', '5-6 Jam', '6-7 Jam', '7-8 Jam', '8-9 Jam', '9-10 Jam', '10-11 Jam', '11-12 Jam', '>12 Jam', 'Total'];
     }
+    
+    const headerRowIdx = currentRow + 1;
+    headers.forEach((h, i) => {
+      const cell = ws.getCell(headerRowIdx, i + 1);
+      cell.value = h;
+      cell.font = { name: 'Arial', size: 10, bold: true };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+      cell.border = borderThin;
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+    
+    let rowStart = currentRow + 2;
 
-    // 31 data rows (days 1-31)
     for (let day = 1; day <= 31; day++) {
       const dayData = monthData.days[String(day)];
       const vals = dayData ? (dayData[block.key] || new Array(13).fill(0)) : new Array(13).fill(0);
-      const row = [String(day)];
-
+      
+      const rIdx = rowStart + day - 1;
+      const rowArr = [day];
+      
       if (block.isTni) {
-        // TNI: cols B-H = hours 0-6, cols I-M = empty, col N = sum of hours 7-12
-        for (let h = 0; h < 7; h++) row.push(vals[h] || 0);
-        row.push(null, null, null, null, null); // I-M empty
+        for (let h = 0; h < 7; h++) rowArr.push(vals[h] || 0);
+        rowArr.push('', '', '', '', '');
         let sum78 = 0;
         for (let h = 7; h < 13; h++) sum78 += (vals[h] || 0);
-        row.push(sum78);
+        rowArr.push(sum78);
       } else {
-        for (let h = 0; h < 13; h++) row.push(vals[h] || 0);
+        for (let h = 0; h < 13; h++) rowArr.push(vals[h] || 0);
       }
-
-      row.push(null); // col O = Total (formula, added later)
-      rows.push(row);
+      
+      rowArr.forEach((v, i) => {
+        const c = ws.getCell(rIdx, i + 1);
+        c.value = v;
+        c.font = fontDefault;
+        c.border = borderThin;
+        if (i > 0) c.alignment = { horizontal: 'right' };
+        else c.alignment = { horizontal: 'center' };
+      });
+      
+      const tCell = ws.getCell(rIdx, 15);
+      tCell.value = { formula: `SUM(B${rIdx}:N${rIdx})` };
+      tCell.font = fontDefault;
+      tCell.border = borderThin;
     }
-
-    // Total row
-    const totalRow = ['Total'];
-    for (let c = 0; c < 14; c++) totalRow.push(null); // B-O (formulas added later)
-    rows.push(totalRow);
-
-    // Gap row between blocks (except after last)
-    if (idx < BLOCKS.length - 1) rows.push([]);
+    
+    const totalRowIdx = rowStart + 31;
+    const tlCell = ws.getCell(totalRowIdx, 1);
+    tlCell.value = 'Total';
+    tlCell.font = { name: 'Tahoma', size: 10, bold: true };
+    tlCell.border = borderThin;
+    
+    for (let c = 2; c <= 15; c++) {
+      const colLetter = String.fromCharCode(64 + c); // A=65, but we start from B (c=2 -> 66 -> B)
+      const cCell = ws.getCell(totalRowIdx, c);
+      cCell.value = { formula: `SUM(${colLetter}${rowStart}:${colLetter}${rowStart+30})` };
+      cCell.font = { name: 'Tahoma', size: 10, bold: true };
+      cCell.border = borderThin;
+    }
+    
+    currentRow = totalRowIdx + 4;
   });
 
-  // Create worksheet
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-
-  // === Add formulas ===
-  BLOCKS.forEach((block, idx) => {
-    // Block starts at 0-indexed row: 10 + idx * 35
-    const blockRow = 10 + idx * 35;
-    const dataStart = blockRow + 2;  // first data row (0-indexed)
-    const dataEnd = blockRow + 32;   // last data row (0-indexed)
-    const totalRow = blockRow + 33;  // total row (0-indexed)
-
-    // Column O formula for each data row: =SUM(B:N)
-    for (let r = dataStart; r <= dataEnd; r++) {
-      const excelRow = r + 1;
-      const cellRef = XLSX.utils.encode_cell({ r, c: 14 });
-      ws[cellRef] = { t: 'n', f: `SUM(B${excelRow}:N${excelRow})`, v: 0 };
-    }
-
-    // Total row formulas: =SUM(B_start:B_end) for each column B-O
-    const excelStart = dataStart + 1;
-    const excelEnd = dataEnd + 1;
-    for (let c = 1; c <= 14; c++) {
-      const colLetter = XLSX.utils.encode_col(c);
-      const cellRef = XLSX.utils.encode_cell({ r: totalRow, c });
-      ws[cellRef] = { t: 'n', f: `SUM(${colLetter}${excelStart}:${colLetter}${excelEnd})`, v: 0 };
-    }
-  });
-
-  // Set column widths
-  ws['!cols'] = [
-    { wch: 6 },  // A: Tgl
-    { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 },  // B-F
-    { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 },  // G-K
-    { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 },              // L-O
+  ws.columns = [
+    { width: 5 }, { width: 9 }, { width: 9 }, { width: 9 }, { width: 9 },
+    { width: 9 }, { width: 9 }, { width: 9 }, { width: 9 }, { width: 9 },
+    { width: 9 }, { width: 9 }, { width: 9 }, { width: 9 }, { width: 10 }
   ];
 
-  XLSX.utils.book_append_sheet(wb, ws, '11. Statistik Parkir');
   return wb;
 }
-
-function onDownload() {
+async function onDownload() {
   if (!selectedMonthKey) return;
   const data = loadMonth(selectedMonthKey);
   if (!data || Object.keys(data.days).length === 0) {
@@ -800,9 +833,34 @@ function onDownload() {
     return;
   }
 
-  const wb = generateOutputWorkbook(data);
-  const filename = `Statistik Parkir ${data.monthName}.xlsx`;
-  XLSX.writeFile(wb, filename);
+  const btn = document.getElementById('btnDownload');
+  const oriText = btn.textContent;
+  btn.textContent = 'Menyiapkan Excel...';
+  btn.disabled = true;
+
+  try {
+    const wb = await generateOutputWorkbook(data);
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const filename = `Statistik Parkir ${data.monthName}.xlsx`;
+    
+    if (window.saveAs) {
+      window.saveAs(blob, filename);
+    } else {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  } catch (err) {
+    console.error('Download error:', err);
+    alert('Gagal mendownload Excel: ' + err.message);
+  } finally {
+    btn.textContent = oriText;
+    btn.disabled = false;
+  }
 }
 
 // ===== INIT =====
