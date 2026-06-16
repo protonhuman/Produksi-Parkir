@@ -8,9 +8,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
-  :root, body.theme-default { --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335; --border: #1e2d44; --accent: #00d4ff; --accent2: #ff6b35; --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3; --shift1: #00d4ff; --shift2: #ff6b35; --shift3: #a78bfa; --grid-color: rgba(0,212,255,0.03); }
-  body.theme-light { --bg: #f8fafc; --surface: #ffffff; --surface2: #f1f5f9; --border: #e2e8f0; --accent: #0ea5e9; --accent2: #f97316; --accent3: #10b981; --text: #0f172a; --text-dim: #64748b; --shift1: #0ea5e9; --shift2: #f97316; --shift3: #8b5cf6; --grid-color: rgba(14,165,233,0.06); }
-  body.theme-cyber { --bg: #050505; --surface: #0f0f13; --surface2: #1a1a24; --border: #333344; --accent: #f0f; --accent2: #ff2a2a; --accent3: #0f0; --text: #fff; --text-dim: #aaa; --shift1: #0ff; --shift2: #f0f; --shift3: #ff0; --grid-color: rgba(255,0,255,0.04); }
+  :root, body.theme-default { --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335; --border: #1e2d44; --accent: #00d4ff; --accent2: #ff6b35; --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3; --text-header: #ffffff; --btn-text: #000000; --shift1: #00d4ff; --shift2: #ff6b35; --shift3: #a78bfa; --grid-color: rgba(0,212,255,0.03); }
+  body.theme-light { --bg: #f8fafc; --surface: #ffffff; --surface2: #f1f5f9; --border: #e2e8f0; --accent: #0ea5e9; --accent2: #f97316; --accent3: #10b981; --text: #334155; --text-dim: #64748b; --text-header: #0f172a; --btn-text: #ffffff; --shift1: #0ea5e9; --shift2: #f97316; --shift3: #8b5cf6; --grid-color: rgba(14,165,233,0.06); }
+  body.theme-cyber { --bg: #0d0d12; --surface: #15151e; --surface2: #1f1f2e; --border: #2d2d3f; --accent: #d926a9; --accent2: #f8312f; --accent3: #00d2d3; --text: #e2e8f0; --text-dim: #94a3b8; --text-header: #e2e8f0; --btn-text: #ffffff; --shift1: #0ff; --shift2: #f0f; --shift3: #ff0; --grid-color: rgba(217,38,169,0.04); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
   body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--grid-color) 1px, transparent 1px), linear-gradient(90deg, var(--grid-color) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; transition: background-image 0.3s; }
@@ -22,7 +22,7 @@
   .container { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
   header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
   .header-badge { display: inline-block; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--accent); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 4px 12px; border-radius: 2px; margin-bottom: 12px; }
-  h1 { font-family: 'Syne', sans-serif; font-size: clamp(20px, 4vw, 30px); font-weight: 800; line-height: 1.2; color: #fff; letter-spacing: -0.5px; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(20px, 4vw, 30px); font-weight: 800; line-height: 1.2; color: var(--text-header); letter-spacing: -0.5px; transition: color 0.3s; }
   h1 span { color: var(--accent); }
   .subtitle { margin-top: 6px; font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
   .section-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
@@ -56,12 +56,12 @@
   .upload-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 4px; }
   .upload-filename { font-size: 11px; color: var(--accent3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; margin: 0 auto; }
   
-  .btn-primary { width: 100%; background: var(--accent); color: #000; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
-  .btn-primary:hover:not(:disabled) { background: #33dbff; transform: translateY(-1px); }
+  .btn-primary { width: 100%; background: var(--accent); color: var(--btn-text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
   .btn-primary:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
   
-  .btn-send { background: var(--accent3); color: #000; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px 20px; border-radius: 3px; cursor: pointer; transition: all 0.15s; margin-top: 16px; width: 100%; }
-  .btn-send:hover:not(:disabled) { background: #8fff85; transform: translateY(-1px); }
+  .btn-send { background: var(--accent3); color: var(--btn-text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px 20px; border-radius: 3px; cursor: pointer; transition: all 0.15s; margin-top: 16px; width: 100%; }
+  .btn-send:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
   .btn-send:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
   
   .status { font-size: 12px; padding: 10px 14px; border-radius: 3px; margin-top: 12px; display: none; }
@@ -113,6 +113,9 @@
   .nav-link { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: none; padding: 6px 14px; border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); transition: all 0.15s; }
   .nav-link:hover { color: var(--text); border-color: var(--accent); }
   .nav-link.active { color: var(--accent); border-color: var(--accent); background: rgba(0,212,255,0.08); }
+  
+  .logo-img { position: absolute; right: 0; bottom: 32px; max-width: 180px; height: auto; display: block; }
+
 </style>
 </head>
 <body>
@@ -124,7 +127,8 @@
       <button class="theme-btn btn-light" onclick="setTheme('theme-light')" title="Light Clean" style="background:#f8fafc; border:2px solid #e2e8f0; width:26px; height:26px; border-radius:50%; cursor:pointer;"></button>
       <button class="theme-btn btn-cyber" onclick="setTheme('theme-cyber')" title="Cyberpunk" style="background:#050505; border:2px solid #f0f; width:26px; height:26px; border-radius:50%; cursor:pointer;"></button>
     </div>
-    <div class="header-badge">PT Angkasa Pura Indonesia</div>
+    <img src="logo.png" alt="Angkasa Pura Supports" class="logo-img" onerror="this.style.display='none'">
+    <div class="header-badge">PT Angkasa Pura Supports</div>
     <nav class="nav-menu">
       <a href="index.html" class="nav-link active">Produksi Parkir</a>
       <a href="statistik.html" class="nav-link">Statistik Parkir</a>
