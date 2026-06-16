@@ -505,12 +505,12 @@ async function parsePDFByCoordinates(file) {
       let fullText = sectionItems.map(it => it.str.trim()).join(' ');
       let category = null;
       if(fullText.includes('Jenis Kendaraan: MOTORCYCLE')) category = 'motor';
+      else if(fullText.includes('Jenis Kendaraan: CAR_VIP') || fullText.includes('Jenis Kendaraan: VIP')) category = 'vip';
       else if(fullText.includes('Jenis Kendaraan: CAR')) category = 'mobil';
       else if(fullText.includes('Jenis Kendaraan: BUS')) category = 'bus_truck';
       else if(fullText.includes('Jenis Kendaraan: TRUCK')) category = 'bus_truck';
       else if(fullText.includes('Jenis Kendaraan: BOX')) category = 'bus_truck';
       else if(fullText.includes('Jenis Kendaraan: INAP')) category = 'inap';
-      else if(fullText.includes('Jenis Kendaraan: VIP')) category = 'vip';
       if(!category) return;
 
       let hourX = {};
