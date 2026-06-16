@@ -8,10 +8,17 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
-  :root { --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335; --border: #1e2d44; --accent: #00d4ff; --accent2: #ff6b35; --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3; }
+  :root, body.theme-default { --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335; --border: #1e2d44; --accent: #00d4ff; --accent2: #ff6b35; --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3; --shift1: #00d4ff; --shift2: #ff6b35; --shift3: #a78bfa; --grid-color: rgba(0,212,255,0.03); }
+  body.theme-light { --bg: #f8fafc; --surface: #ffffff; --surface2: #f1f5f9; --border: #e2e8f0; --accent: #0ea5e9; --accent2: #f97316; --accent3: #10b981; --text: #0f172a; --text-dim: #64748b; --shift1: #0ea5e9; --shift2: #f97316; --shift3: #8b5cf6; --grid-color: rgba(14,165,233,0.06); }
+  body.theme-cyber { --bg: #050505; --surface: #0f0f13; --surface2: #1a1a24; --border: #333344; --accent: #f0f; --accent2: #ff2a2a; --accent3: #0f0; --text: #fff; --text-dim: #aaa; --shift1: #0ff; --shift2: #f0f; --shift3: #ff0; --grid-color: rgba(255,0,255,0.04); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
-  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--grid-color) 1px, transparent 1px), linear-gradient(90deg, var(--grid-color) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; transition: background-image 0.3s; }
+  .theme-btn { transition: transform 0.2s, box-shadow 0.2s; }
+  .theme-btn:hover { transform: scale(1.15); }
+  body.theme-default .btn-default { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  body.theme-light .btn-light { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  body.theme-cyber .btn-cyber { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
   .container { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
 
   /* === NAV === */
@@ -126,7 +133,12 @@
 <body>
 <div class="container">
 
-  <header>
+  <header style="position: relative;">
+    <div class="theme-switcher" style="position: absolute; right: 0; top: 0; display: flex; gap: 8px;">
+      <button class="theme-btn btn-default" onclick="setTheme('theme-default')" title="Default Dark" style="background:#0a0e1a; border:2px solid #1e2d44; width:26px; height:26px; border-radius:50%; cursor:pointer;"></button>
+      <button class="theme-btn btn-light" onclick="setTheme('theme-light')" title="Light Clean" style="background:#f8fafc; border:2px solid #e2e8f0; width:26px; height:26px; border-radius:50%; cursor:pointer;"></button>
+      <button class="theme-btn btn-cyber" onclick="setTheme('theme-cyber')" title="Cyberpunk" style="background:#050505; border:2px solid #f0f; width:26px; height:26px; border-radius:50%; cursor:pointer;"></button>
+    </div>
     <div class="header-badge">PT Angkasa Pura Indonesia</div>
     <nav class="nav-menu">
       <a href="index.html" class="nav-link">Produksi Parkir</a>
@@ -240,6 +252,15 @@
 </div>
 
 <script>
+function setTheme(themeName) {
+  document.body.className = themeName;
+  localStorage.setItem('appTheme', themeName);
+}
+(function() {
+  const savedTheme = localStorage.getItem('appTheme') || 'theme-default';
+  setTheme(savedTheme);
+})();
+
 // ===== CONSTANTS =====
 const BULAN_INDO = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 const BULAN_MAP = {};
