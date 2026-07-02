@@ -563,6 +563,10 @@ function updateMonthSelector() {
   }
 }
 
+function getDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
 function renderDayGrid() {
   const grid = document.getElementById('dayGrid');
   grid.innerHTML = '';
@@ -570,7 +574,12 @@ function renderDayGrid() {
   const filledDays = data ? Object.keys(data.days) : [];
   let filledCount = 0;
 
-  for (let d = 1; d <= 31; d++) {
+  const parts = selectedMonthKey.replace('statistik_', '').split('_');
+  const yr = parseInt(parts[0]);
+  const mn = parseInt(parts[1]);
+  const daysInMonth = getDaysInMonth(yr, mn);
+
+  for (let d = 1; d <= daysInMonth; d++) {
     const cell = document.createElement('div');
     cell.className = 'day-cell';
     cell.textContent = d;
@@ -595,8 +604,8 @@ function renderDayGrid() {
   }
 
   // Update stats
-  document.getElementById('statsCount').textContent = `${filledCount} / 31`;
-  document.getElementById('progressFill').style.width = `${(filledCount / 31) * 100}%`;
+  document.getElementById('statsCount').textContent = `${filledCount} / ${daysInMonth}`;
+  document.getElementById('progressFill').style.width = `${(filledCount / daysInMonth) * 100}%`;
   document.getElementById('btnDownload').disabled = filledCount === 0;
 }
 
@@ -638,15 +647,17 @@ function setStatus(id, msg, type) {
 async function onSave() {
   if (!currentUpload) return;
 
-  const day = parseInt(document.getElementById('inputDay').value);
-  if (day < 1 || day > 31 || isNaN(day)) {
-    setStatus('statusSave', '✗ Tanggal tidak valid (1-31)', 'error');
-    return;
-  }
-
   const month = parseInt(document.getElementById('inputMonth').value);
   const year = parseInt(document.getElementById('inputYear').value);
   const monthName = BULAN_INDO[month - 1];
+  const daysInMonth = getDaysInMonth(year, month);
+
+  const day = parseInt(document.getElementById('inputDay').value);
+  if (day < 1 || day > daysInMonth || isNaN(day)) {
+    setStatus('statusSave', `✗ Tanggal tidak valid (1-${daysInMonth})`, 'error');
+    return;
+  }
+
   const { data } = currentUpload;
   const key = getMonthKey(year, month);
 
@@ -720,6 +731,7 @@ async function generateOutputWorkbook(monthData) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('11. Statistik Parkir');
   const { year, month, monthName } = monthData;
+  const daysInMonth = getDaysInMonth(year, month);
 
   // Global styles
   const fontDefault = { name: 'Tahoma', size: 10 };
@@ -789,7 +801,7 @@ async function generateOutputWorkbook(monthData) {
     
     let rowStart = currentRow + 2;
 
-    for (let day = 1; day <= 31; day++) {
+    for (let day = 1; day <= daysInMonth; day++) {
       const dayData = monthData.days[String(day)];
       const vals = dayData ? (dayData[block.key] || new Array(13).fill(0)) : new Array(13).fill(0);
       
@@ -821,7 +833,7 @@ async function generateOutputWorkbook(monthData) {
       tCell.border = borderThin;
     }
     
-    const totalRowIdx = rowStart + 31;
+    const totalRowIdx = rowStart + daysInMonth;
     const tlCell = ws.getCell(totalRowIdx, 1);
     tlCell.value = 'Total';
     tlCell.font = { name: 'Tahoma', size: 10, bold: true };
@@ -830,7 +842,7 @@ async function generateOutputWorkbook(monthData) {
     for (let c = 2; c <= 15; c++) {
       const colLetter = String.fromCharCode(64 + c); // A=65, but we start from B (c=2 -> 66 -> B)
       const cCell = ws.getCell(totalRowIdx, c);
-      cCell.value = { formula: `SUM(${colLetter}${rowStart}:${colLetter}${rowStart+30})` };
+      cCell.value = { formula: `SUM(${colLetter}${rowStart}:${colLetter}${rowStart + daysInMonth - 1})` };
       cCell.font = { name: 'Tahoma', size: 10, bold: true };
       cCell.border = borderThin;
     }
