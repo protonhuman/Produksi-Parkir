@@ -52,7 +52,7 @@
   /* === DETECTED INFO === */
   .detected-info { margin-top: 16px; display: none; }
   .detected-info.show { display: block; }
-  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .settings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
   .field label { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
   .field input, .field select { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 12px; border-radius: 3px; outline: none; transition: border-color 0.2s; }
@@ -169,8 +169,25 @@
           <input type="number" id="inputDay" min="1" max="31" value="1">
         </div>
         <div class="field">
-          <label>Bulan & Tahun</label>
-          <input type="text" id="inputMonthYear" readonly style="color:var(--accent);cursor:default;">
+          <label>Bulan</label>
+          <select id="inputMonth">
+            <option value="1">Januari</option>
+            <option value="2">Februari</option>
+            <option value="3">Maret</option>
+            <option value="4">April</option>
+            <option value="5">Mei</option>
+            <option value="6">Juni</option>
+            <option value="7">Juli</option>
+            <option value="8">Agustus</option>
+            <option value="9">September</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+            <option value="12">Desember</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tahun</label>
+          <input type="number" id="inputYear" min="2000" max="2100">
         </div>
       </div>
     </div>
@@ -349,7 +366,8 @@ async function processFile(file) {
   }
 
   document.getElementById('inputDay').value = day;
-  document.getElementById('inputMonthYear').value = `${monthName} ${year}`;
+  document.getElementById('inputMonth').value = month;
+  document.getElementById('inputYear').value = year;
   document.getElementById('detectedInfo').classList.add('show');
 
   // Parse Excel data
@@ -626,7 +644,10 @@ async function onSave() {
     return;
   }
 
-  const { month, year, monthName, data } = currentUpload;
+  const month = parseInt(document.getElementById('inputMonth').value);
+  const year = parseInt(document.getElementById('inputYear').value);
+  const monthName = BULAN_INDO[month - 1];
+  const { data } = currentUpload;
   const key = getMonthKey(year, month);
 
   document.getElementById('btnSave').disabled = true;
