@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rekapitulasi UNIK — Syamsudin Noor</title>
+<meta name="description" content="Rekapitulasi Uang Elektronik (UNIK) Parkir Kendaraan — Bandara Internasional Syamsudin Noor Banjarbaru">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+  :root, body.theme-default {
+    --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335;
+    --border: #1e2d44; --accent: #a78bfa; --accent2: #ff6b35;
+    --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3;
+    --text-header: #ffffff; --btn-text: #000000;
+    --grid-color: rgba(167,139,250,0.03);
+  }
+  body.theme-light {
+    --bg: #f8fafc; --surface: #ffffff; --surface2: #f1f5f9;
+    --border: #e2e8f0; --accent: #8b5cf6; --accent2: #f97316;
+    --accent3: #10b981; --text: #334155; --text-dim: #64748b;
+    --text-header: #0f172a; --btn-text: #ffffff;
+    --grid-color: rgba(139,92,246,0.06);
+  }
+  body.theme-cyber {
+    --bg: #0d0d12; --surface: #15151e; --surface2: #1f1f2e;
+    --border: #2d2d3f; --accent: #d926a9; --accent2: #f8312f;
+    --accent3: #00d2d3; --text: #e2e8f0; --text-dim: #94a3b8;
+    --text-header: #e2e8f0; --btn-text: #ffffff;
+    --grid-color: rgba(217,38,169,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Mono', monospace; min-height: 100vh;
+    overflow-x: hidden; transition: background-color 0.3s, color 0.3s;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(var(--grid-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+
+  /* === THEME BUTTONS === */
+  .theme-btn { transition: transform 0.2s, box-shadow 0.2s; }
+  .theme-btn:hover { transform: scale(1.15); }
+  body.theme-default .btn-default { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  body.theme-light .btn-light { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  body.theme-cyber .btn-cyber { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+
+  .container { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  /* === HEADER === */
+  header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  .header-badge {
+    display: inline-block; background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.3); color: var(--accent);
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 2px; margin-bottom: 12px;
+  }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(20px,4vw,30px); font-weight: 800; line-height: 1.2; color: var(--text-header); letter-spacing: -0.5px; }
+  h1 span { color: var(--accent); }
+  .subtitle { margin-top: 6px; font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
+  .logo-img { position: absolute; right: 0; bottom: 32px; max-width: 180px; height: auto; display: block; }
+
+  /* === NAV === */
+  .nav-menu { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .nav-link { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: none; padding: 6px 14px; border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); transition: all 0.15s; }
+  .nav-link:hover { color: var(--text); border-color: var(--accent); }
+  .nav-link.active { color: var(--accent); border-color: var(--accent); background: rgba(167,139,250,0.08); }
+
+  /* === SECTIONS === */
+  .section-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+
+  /* === UPLOAD === */
+  .upload-zone { border: 1px dashed var(--border); border-radius: 3px; padding: 28px 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; background: var(--surface2); }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(167,139,250,0.05); }
+  .upload-zone.loaded { border-color: var(--accent3); border-style: solid; background: rgba(124,252,110,0.04); }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 4px; }
+  .upload-filename { font-size: 11px; color: var(--accent3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; margin: 0 auto; }
+
+  /* === DETECTED INFO === */
+  .detected-info { margin-top: 16px; display: none; }
+  .detected-info.show { display: block; }
+  .settings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
+  .field label { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .field input, .field select { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 12px; border-radius: 3px; outline: none; transition: border-color 0.2s; }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field-full { grid-column: 1 / -1; }
+
+  /* === BUTTONS === */
+  .btn-primary { width: 100%; background: var(--accent); color: var(--btn-text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  .btn-download { background: var(--accent3); color: #000; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px 20px; border-radius: 3px; cursor: pointer; transition: all 0.15s; margin-top: 16px; width: 100%; }
+  .btn-download:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-download:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  .btn-danger { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; padding: 8px 16px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+  /* === STATUS === */
+  .status { font-size: 12px; padding: 10px 14px; border-radius: 3px; margin-top: 12px; display: none; }
+  .status.show { display: block; }
+  .status.loading { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: var(--accent); }
+  .status.success { background: rgba(124,252,110,0.1); border: 1px solid rgba(124,252,110,0.3); color: var(--accent3); }
+  .status.error { background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.3); color: var(--accent2); }
+
+  /* === TABLES === */
+  .table-wrap { overflow-x: auto; margin: 12px -4px; padding: 0 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th { background: var(--surface2); padding: 7px 8px; text-align: left; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th.num { text-align: right; }
+  td { padding: 7px 8px; border-bottom: 1px solid rgba(30,45,68,0.5); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .td-label { color: var(--text-dim); font-size: 10px; }
+  .td-num { text-align: right; font-weight: 500; }
+  .td-total { color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 700; text-align: right; }
+  .td-total-label { color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  tr.total-row { background: rgba(167,139,250,0.05); }
+  tr.bank-header-row td { background: var(--surface2); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); border-top: 2px solid rgba(167,139,250,0.3); padding: 6px 8px; }
+  .td-zero { color: var(--text-dim); opacity: 0.35; }
+
+  /* === DAY GRID === */
+  .stats-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .stats-count { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--accent); }
+  .stats-label { font-size: 11px; color: var(--text-dim); }
+  .progress-track { flex: 1; min-width: 120px; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent3)); border-radius: 2px; transition: width 0.4s ease; }
+  .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 16px 0; }
+  .day-cell { text-align: center; padding: 10px 4px; border: 1px solid var(--border); border-radius: 3px; font-size: 13px; cursor: pointer; transition: all 0.2s; position: relative; user-select: none; }
+  .day-cell:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .day-cell.filled { border-color: rgba(124,252,110,0.4); background: rgba(124,252,110,0.06); color: var(--accent3); font-weight: 600; }
+  .day-cell.filled::after { content: '✓'; position: absolute; top: 2px; right: 4px; font-size: 8px; color: var(--accent3); }
+  .day-cell.selected { border-color: var(--accent); background: rgba(167,139,250,0.12); color: var(--accent); box-shadow: 0 0 12px rgba(167,139,250,0.15); }
+  .day-cell.empty { color: var(--text-dim); opacity: 0.5; }
+
+  /* === DETAIL VIEW === */
+  .detail-section { margin-top: 16px; display: none; }
+  .detail-section.show { display: block; }
+  .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .detail-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--accent); }
+
+  /* === MONTH SELECTOR === */
+  .month-selector { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+  .month-selector select { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 12px; border-radius: 3px; outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7fa3' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+  .month-selector select:focus { border-color: var(--accent); }
+
+  /* === ANIMATIONS === */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.3s ease forwards; }
+  @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 rgba(167,139,250,0); } 50% { box-shadow: 0 0 16px rgba(167,139,250,0.35); } }
+  .pulse { animation: pulseGlow 1.5s ease infinite; }
+
+  .hidden { display: none !important; }
+
+  /* === FOOTNOTE === */
+  .footnote { margin-top: 32px; font-size: 10px; color: var(--text-dim); text-align: center; letter-spacing: 1px; line-height: 1.8; }
+  .pill { display: inline-block; padding: 2px 8px; background: rgba(255,255,255,0.05); border-radius: 2px; font-size: 10px; color: var(--text-dim); border: 1px solid var(--border); }
+
+  /* === SUMMARY CHIPS === */
+  .chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .chip { padding: 4px 10px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 1px; border: 1px solid; }
+  .chip-bri { background: rgba(0,136,204,0.12); border-color: rgba(0,136,204,0.35); color: #38bdf8; }
+  .chip-mandiri { background: rgba(255,200,0,0.12); border-color: rgba(255,200,0,0.35); color: #fbbf24; }
+  .chip-bca { background: rgba(0,128,64,0.12); border-color: rgba(0,128,64,0.35); color: #4ade80; }
+  .chip-bni  { background: rgba(255,102,0,0.12);  border-color: rgba(255,102,0,0.35);  color: #fb923c; }
+  .chip-cash { background: rgba(148,163,184,0.12); border-color: rgba(148,163,184,0.35); color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header style="position:relative;">
+    <div class="theme-switcher" style="position:absolute;right:0;top:0;display:flex;gap:8px;">
+      <button class="theme-btn btn-default" onclick="setTheme('theme-default')" title="Default Dark" style="background:#0a0e1a;border:2px solid #1e2d44;width:26px;height:26px;border-radius:50%;cursor:pointer;"></button>
+      <button class="theme-btn btn-light" onclick="setTheme('theme-light')" title="Light Clean" style="background:#f8fafc;border:2px solid #e2e8f0;width:26px;height:26px;border-radius:50%;cursor:pointer;"></button>
+      <button class="theme-btn btn-cyber" onclick="setTheme('theme-cyber')" title="Cyberpunk" style="background:#050505;border:2px solid #f0f;width:26px;height:26px;border-radius:50%;cursor:pointer;"></button>
+    </div>
+    <img src="logo.png" alt="Angkasa Pura Supports" class="logo-img" onerror="this.style.display='none'">
+    <div class="header-badge">PT Angkasa Pura Supports</div>
+    <nav class="nav-menu">
+      <a href="index.html" class="nav-link">Produksi Parkir</a>
+      <a href="statistik.html" class="nav-link">Statistik Parkir</a>
+      <a href="unik.html" class="nav-link active">Rekapitulasi UNIK</a>
+    </nav>
+    <h1>Rekapitulasi <span>UNIK</span></h1>
+    <div class="subtitle">UANG ELEKTRONIK — BANDARA INTERNASIONAL SYAMSUDIN NOOR · BANJARBARU</div>
+  </header>
+
+  <!-- UPLOAD SECTION -->
+  <div class="section-label">Upload Data Harian</div>
+  <div class="card">
+    <div class="upload-zone" id="uploadZone"
+         ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave()">
+      <input type="file" accept=".xlsx,.xls" id="fileInput" onchange="onFileSelect(event)">
+      <div class="upload-icon">💳</div>
+      <span class="upload-label">Upload File Casual Harian (.xlsx)</span>
+      <div class="upload-filename" id="fileName">Seret atau klik pilih file CASUAL HARIAN</div>
+    </div>
+
+    <div class="detected-info" id="detectedInfo">
+      <div class="settings-grid" style="margin-top:16px">
+        <div class="field">
+          <label>Tanggal</label>
+          <input type="number" id="inputDay" min="1" max="31" value="1">
+        </div>
+        <div class="field">
+          <label>Bulan</label>
+          <select id="inputMonth">
+            <option value="1">Januari</option><option value="2">Februari</option>
+            <option value="3">Maret</option><option value="4">April</option>
+            <option value="5">Mei</option><option value="6">Juni</option>
+            <option value="7">Juli</option><option value="8">Agustus</option>
+            <option value="9">September</option><option value="10">Oktober</option>
+            <option value="11">November</option><option value="12">Desember</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tahun</label>
+          <input type="number" id="inputYear" min="2020" max="2100">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIEW SECTION -->
+  <div id="previewSection" class="hidden">
+    <div class="section-label">Preview Data UNIK</div>
+    <div class="card">
+      <div class="chip-row" id="summaryChips"></div>
+      <div class="table-wrap" style="margin-top:16px">
+        <table>
+          <thead>
+            <tr>
+              <th>Bank</th>
+              <th>Kelompok</th>
+              <th class="num">Qty</th>
+              <th class="num">Amount (Rp)</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
+      <button class="btn-primary pulse" id="btnSave" onclick="onSave()" style="margin-top:16px">
+        💾 SIMPAN KE REKAP BULANAN
+      </button>
+      <div class="status" id="statusSave"></div>
+    </div>
+  </div>
+
+  <!-- REKAP BULANAN SECTION -->
+  <div class="section-label">Rekap Bulanan</div>
+  <div class="card">
+    <div class="month-selector">
+      <select id="selectMonth" onchange="onMonthChange()"></select>
+    </div>
+
+    <div class="stats-bar">
+      <div>
+        <div class="stats-count" id="statsCount">0 / 31</div>
+        <div class="stats-label">hari terisi</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="day-grid" id="dayGrid"></div>
+
+    <!-- DETAIL VIEW -->
+    <div class="detail-section" id="detailSection">
+      <div class="detail-header">
+        <div class="detail-title" id="detailTitle">—</div>
+        <button class="btn-danger" id="btnDelete" onclick="onDeleteDay()">✕ Hapus</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Bank</th>
+              <th>Kelompok</th>
+              <th class="num">Qty</th>
+              <th class="num">Amount (Rp)</th>
+            </tr>
+          </thead>
+          <tbody id="detailBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <button class="btn-download" id="btnDownload" onclick="onDownload()" disabled>
+      ⬇ DOWNLOAD REKAP EXCEL
+    </button>
+  </div>
+
+  <div class="footnote">
+    <span class="pill">BRI BRIZZI</span>&nbsp;·&nbsp;
+    <span class="pill">MANDIRI E-MONEY</span>&nbsp;·&nbsp;
+    <span class="pill">BCA FLAZZ</span>&nbsp;·&nbsp;
+    <span class="pill">BNI TAPCASH</span><br><br>
+    Upload file <strong>Casual Harian (.xlsx)</strong> setiap hari → data UNIK terakumulasi per bulan<br>
+    Download rekap kapan saja · Format sesuai <strong>Rekonsiliasi Non Tunai Perbank</strong>
+  </div>
+
+</div>
+
+<script>
+// ===== THEME =====
+function setTheme(t) {
+  document.body.className = t;
+  localStorage.setItem('appTheme', t);
+}
+(function() { setTheme(localStorage.getItem('appTheme') || 'theme-default'); })();
+
+// ===== CONSTANTS =====
+const BULAN_INDO = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const BULAN_MAP = {};
+BULAN_INDO.forEach((b,i) => { BULAN_MAP[b.toLowerCase()] = i+1; });
+
+// Vehicle type groups (all uppercase for matching)
+const RODA2_TYPES  = ['MOTORCYCLE'];
+const RODA4_TYPES  = ['CAR','INAP PREMIUM','INAP MEDIUM','INAP REGULER','VIP','VVIP','INAP'];
+const RODA6_TYPES  = ['BOX','BOX/TRUCK','BUS','TRUCK'];
+
+// Column indices (0-based) in SheetJS parsed rows from CASUAL HARIAN
+// Col AP (idx 42): Cash Qty,    Col AQ (idx 43): Cash Amount
+// Col AR (idx 44): Mandiri Qty, Col AS (idx 45): Mandiri Amount
+// Col AT (idx 46): BRI Qty,     Col AU (idx 47): BRI Amount
+// Col AV (idx 48): BCA Qty,     Col AW (idx 49): (merged), Col AX (idx 50): BCA Amount
+// Col AY (idx 51): BNI Qty,     Col AZ (idx 52): BNI Amount
+const COL_VEH      = 2;
+const COL_CASH_QTY = 42, COL_CASH_AMT = 43;
+const COL_MAND_QTY = 44, COL_MAND_AMT = 45;
+const COL_BRI_QTY  = 46, COL_BRI_AMT  = 47;
+const COL_BCA_QTY  = 48, COL_BCA_AMT  = 50;
+const COL_BNI_QTY  = 51, COL_BNI_AMT  = 52;
+
+const BANKS = [
+  { key: 'cash',    label: 'TUNAI / CASH',    chipClass: 'chip-cash',    qtyCol: COL_CASH_QTY, amtCol: COL_CASH_AMT },
+  { key: 'bri',     label: 'BRI BRIZZI',      chipClass: 'chip-bri',     qtyCol: COL_BRI_QTY,  amtCol: COL_BRI_AMT  },
+  { key: 'mandiri', label: 'MANDIRI E-MONEY',  chipClass: 'chip-mandiri', qtyCol: COL_MAND_QTY, amtCol: COL_MAND_AMT },
+  { key: 'bca',     label: 'BCA FLAZZ',        chipClass: 'chip-bca',     qtyCol: COL_BCA_QTY,  amtCol: COL_BCA_AMT  },
+  { key: 'bni',     label: 'BNI TAPCASH',      chipClass: 'chip-bni',     qtyCol: COL_BNI_QTY,  amtCol: COL_BNI_AMT  },
+];
+
+const GROUPS = [
+  { key: 'r2', label: 'Roda 2 (Motor)',    types: RODA2_TYPES },
+  { key: 'r4', label: 'Roda 4 (Mobil)',    types: RODA4_TYPES },
+  { key: 'r6', label: 'Roda 6 (Bus/Truk)', types: RODA6_TYPES },
+];
+
+// ===== SUPABASE =====
+const supabaseUrl = 'https://nbxcvigngtzeymoleuvc.supabase.co';
+const supabaseKey = 'sb_publishable_C8ce4W1sC4VoDiRKnwkbhw_faMXX5lT';
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+let cloudData    = {};
+let currentUpload = null;
+let selectedMonthKey = null;
+let selectedDay = null;
+
+// ===== DRAG/DROP UPLOAD =====
+function onDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+function onDragLeave() { document.getElementById('uploadZone').classList.remove('drag-over'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) processFile(file);
+}
+function onFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+// ===== PARSE DATE FROM FILENAME =====
+function parseDateFromFilename(name) {
+  // Patterns: "CASUAL HARIAN 03.xlsx", "Casual Harian 03 Juli 2026.xlsx", "CASUAL HARIAN 03 Juli 2026.xlsx"
+  const now = new Date();
+  let day = now.getDate(), month = now.getMonth()+1, year = now.getFullYear();
+
+  // Try "... DD Bulan YYYY"
+  const fullMatch = name.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/i);
+  if (fullMatch) {
+    const d = parseInt(fullMatch[1]);
+    const bulanStr = fullMatch[2].toLowerCase();
+    const yr = parseInt(fullMatch[3]);
+    if (d >= 1 && d <= 31 && BULAN_MAP[bulanStr] && yr >= 2020) {
+      return { day: d, month: BULAN_MAP[bulanStr], year: yr };
+    }
+  }
+
+  // Try "... DD.xlsx" (just a number)
+  const numMatch = name.match(/(\d{1,2})(?:\.\w+)?$/);
+  if (numMatch) {
+    const d = parseInt(numMatch[1]);
+    if (d >= 1 && d <= 31) {
+      day = d;
+    }
+  }
+
+  return { day, month, year };
+}
+
+// ===== PROCESS FILE =====
+async function processFile(file) {
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('uploadZone').classList.add('loaded');
+
+  const { day, month, year } = parseDateFromFilename(file.name);
+  document.getElementById('inputDay').value = day;
+  document.getElementById('inputMonth').value = month;
+  document.getElementById('inputYear').value = year;
+  document.getElementById('detectedInfo').classList.add('show');
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const data = new Uint8Array(arrayBuffer);
+    const wb = XLSX.read(data, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const parsed = parseUnikData(ws);
+
+    currentUpload = { day, month, year, monthName: BULAN_INDO[month-1], data: parsed };
+    renderPreview(parsed);
+    document.getElementById('previewSection').classList.remove('hidden');
+    document.getElementById('previewSection').classList.add('fade-in');
+
+    selectedMonthKey = getMonthKey(year, month);
+    updateMonthSelector();
+    renderDayGrid();
+  } catch(err) {
+    setStatus('statusSave', '✗ Gagal membaca file: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+// ===== PARSE UNIK DATA FROM CASUAL HARIAN =====
+function parseUnikData(ws) {
+  // Initialize result object
+  const result = {};
+  BANKS.forEach(bank => {
+    GROUPS.forEach(grp => {
+      result[`${bank.key}_${grp.key}_qty`] = 0;
+      result[`${bank.key}_${grp.key}_amt`] = 0;
+    });
+  });
+
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:BB30');
+
+  const getNum = (r, c) => {
+    const cell = ws[XLSX.utils.encode_cell({ r, c })];
+    if (!cell) return 0;
+    const v = parseFloat(cell.v);
+    return isNaN(v) ? 0 : v;
+  };
+
+  const getStr = (r, c) => {
+    const cell = ws[XLSX.utils.encode_cell({ r, c })];
+    if (!cell || cell.v == null) return '';
+    return String(cell.v).trim().toUpperCase();
+  };
+
+  for (let r = 0; r <= range.e.r; r++) {
+    const vehType = getStr(r, COL_VEH);
+    if (!vehType) continue;
+
+    // Determine group
+    let grpKey = null;
+    if (RODA2_TYPES.some(t => vehType.includes(t) || t === vehType)) grpKey = 'r2';
+    else if (RODA6_TYPES.some(t => vehType === t || vehType.startsWith(t))) grpKey = 'r6';
+    else if (RODA4_TYPES.some(t => vehType === t || vehType.startsWith(t))) grpKey = 'r4';
+
+    if (!grpKey) continue;
+
+    // Accumulate each bank
+    BANKS.forEach(bank => {
+      result[`${bank.key}_${grpKey}_qty`] += getNum(r, bank.qtyCol);
+      result[`${bank.key}_${grpKey}_amt`] += getNum(r, bank.amtCol);
+    });
+  }
+
+  return result;
+}
+
+// ===== RENDER PREVIEW TABLE =====
+function renderPreview(data) {
+  const tbody = document.getElementById('previewBody');
+  tbody.innerHTML = '';
+
+  BANKS.forEach(bank => {
+    // Bank header row
+    tbody.innerHTML += `<tr class="bank-header-row"><td colspan="4">💳 ${bank.label}</td></tr>`;
+
+    let bankQty = 0, bankAmt = 0;
+    GROUPS.forEach(grp => {
+      const qty = data[`${bank.key}_${grp.key}_qty`] || 0;
+      const amt = data[`${bank.key}_${grp.key}_amt`] || 0;
+      bankQty += qty; bankAmt += amt;
+      tbody.innerHTML += `<tr>
+        <td class="td-label"></td>
+        <td class="td-label">${grp.label}</td>
+        <td class="td-num ${qty===0?'td-zero':''}">${qty.toLocaleString('id-ID')}</td>
+        <td class="td-num ${amt===0?'td-zero':''}">${amt.toLocaleString('id-ID')}</td>
+      </tr>`;
+    });
+
+    // Bank subtotal
+    tbody.innerHTML += `<tr class="total-row">
+      <td class="td-total-label" colspan="2">— Subtotal ${bank.label}</td>
+      <td class="td-total">${bankQty.toLocaleString('id-ID')}</td>
+      <td class="td-total">${bankAmt.toLocaleString('id-ID')}</td>
+    </tr>`;
+  });
+
+  // Summary chips
+  const chips = document.getElementById('summaryChips');
+  chips.innerHTML = '';
+  let totalQty = 0, totalAmt = 0;
+  BANKS.forEach(bank => {
+    let bq = 0, ba = 0;
+    GROUPS.forEach(grp => { bq += data[`${bank.key}_${grp.key}_qty`]||0; ba += data[`${bank.key}_${grp.key}_amt`]||0; });
+    totalQty += bq; totalAmt += ba;
+    chips.innerHTML += `<span class="chip ${bank.chipClass}">${bank.label}: ${bq.toLocaleString('id-ID')} kend · Rp ${ba.toLocaleString('id-ID')}</span>`;
+  });
+}
+
+// ===== RENDER DETAIL TABLE (same as preview but for a specific day) =====
+function renderDetailTable(data, targetBodyId) {
+  const tbody = document.getElementById(targetBodyId);
+  tbody.innerHTML = '';
+
+  BANKS.forEach(bank => {
+    tbody.innerHTML += `<tr class="bank-header-row"><td colspan="4">💳 ${bank.label}</td></tr>`;
+    GROUPS.forEach(grp => {
+      const qty = data[`${bank.key}_${grp.key}_qty`] || 0;
+      const amt = data[`${bank.key}_${grp.key}_amt`] || 0;
+      tbody.innerHTML += `<tr>
+        <td class="td-label"></td>
+        <td class="td-label">${grp.label}</td>
+        <td class="td-num ${qty===0?'td-zero':''}">${qty.toLocaleString('id-ID')}</td>
+        <td class="td-num ${amt===0?'td-zero':''}">${amt.toLocaleString('id-ID')}</td>
+      </tr>`;
+    });
+    let bq=0, ba=0;
+    GROUPS.forEach(grp => { bq+=data[`${bank.key}_${grp.key}_qty`]||0; ba+=data[`${bank.key}_${grp.key}_amt`]||0; });
+    tbody.innerHTML += `<tr class="total-row">
+      <td class="td-total-label" colspan="2">— Subtotal ${bank.label}</td>
+      <td class="td-total">${bq.toLocaleString('id-ID')}</td>
+      <td class="td-total">${ba.toLocaleString('id-ID')}</td>
+    </tr>`;
+  });
+}
+
+// ===== CLOUD KEY =====
+function getMonthKey(year, month) {
+  return `unik_${year}_${String(month).padStart(2,'0')}`;
+}
+function loadMonth(key) { return cloudData[key] || null; }
+
+async function saveMonth(key, data) {
+  cloudData[key] = data;
+  try {
+    const { data: existing } = await supabaseClient.from('app_settings').select('id').eq('setting_key', key).single();
+    if (existing) {
+      await supabaseClient.from('app_settings').update({ setting_value: data }).eq('id', existing.id);
+    } else {
+      await supabaseClient.from('app_settings').insert([{ setting_key: key, setting_value: data }]);
+    }
+  } catch(e) { console.error('saveMonth error:', e); }
+}
+
+function getAvailableMonths() {
+  const keys = Object.keys(cloudData).filter(k => k.startsWith('unik_'));
+  keys.sort().reverse();
+  return keys;
+}
+
+async function ensureMonthData(year, month, monthName) {
+  const key = getMonthKey(year, month);
+  let data = loadMonth(key);
+  if (!data) {
+    data = { year, month, monthName, days: {} };
+    await saveMonth(key, data);
+  }
+  return data;
+}
+
+// ===== MONTH SELECTOR =====
+function updateMonthSelector() {
+  const sel = document.getElementById('selectMonth');
+  const months = getAvailableMonths();
+  const now = new Date();
+  const currentKey = getMonthKey(now.getFullYear(), now.getMonth()+1);
+  if (!months.includes(currentKey)) months.push(currentKey);
+  if (currentUpload) {
+    const uploadKey = getMonthKey(currentUpload.year, currentUpload.month);
+    if (!months.includes(uploadKey)) months.push(uploadKey);
+  }
+  const unique = [...new Set(months)].sort().reverse();
+  sel.innerHTML = '';
+  unique.forEach(key => {
+    const parts = key.replace('unik_','').split('_');
+    const yr = parseInt(parts[0]), mn = parseInt(parts[1]);
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = `${BULAN_INDO[mn-1]} ${yr}`;
+    sel.appendChild(opt);
+  });
+  if (selectedMonthKey && unique.includes(selectedMonthKey)) {
+    sel.value = selectedMonthKey;
+  } else if (unique.length > 0) {
+    selectedMonthKey = unique[0];
+    sel.value = unique[0];
+  }
+}
+
+// ===== DAY GRID =====
+function getDaysInMonth(year, month) { return new Date(year, month, 0).getDate(); }
+
+function renderDayGrid() {
+  const grid = document.getElementById('dayGrid');
+  grid.innerHTML = '';
+  if (!selectedMonthKey) return;
+  const data = loadMonth(selectedMonthKey);
+  const filledDays = data ? Object.keys(data.days) : [];
+  let filledCount = 0;
+  const parts = selectedMonthKey.replace('unik_','').split('_');
+  const yr = parseInt(parts[0]), mn = parseInt(parts[1]);
+  const daysInMonth = getDaysInMonth(yr, mn);
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+    cell.textContent = d;
+    const isFilled = filledDays.includes(String(d));
+    if (isFilled) { cell.classList.add('filled'); filledCount++; }
+    else cell.classList.add('empty');
+    if (selectedDay === d) cell.classList.add('selected');
+    cell.onclick = () => {
+      selectedDay = d;
+      renderDayGrid();
+      if (isFilled) showDayDetail(d, data.days[String(d)]);
+      else hideDayDetail();
+    };
+    grid.appendChild(cell);
+  }
+  document.getElementById('statsCount').textContent = `${filledCount} / ${daysInMonth}`;
+  document.getElementById('progressFill').style.width = `${(filledCount/daysInMonth)*100}%`;
+  document.getElementById('btnDownload').disabled = filledCount === 0;
+}
+
+function showDayDetail(day, dayData) {
+  document.getElementById('detailSection').classList.add('show');
+  const parts = selectedMonthKey.replace('unik_','').split('_');
+  document.getElementById('detailTitle').textContent = `Tanggal ${day} ${BULAN_INDO[parseInt(parts[1])-1]} ${parts[0]}`;
+  renderDetailTable(dayData, 'detailBody');
+}
+function hideDayDetail() { document.getElementById('detailSection').classList.remove('show'); }
+
+// ===== STATUS =====
+function setStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = `status ${type} show`;
+}
+
+// ===== SAVE =====
+async function onSave() {
+  if (!currentUpload) return;
+  const month = parseInt(document.getElementById('inputMonth').value);
+  const year  = parseInt(document.getElementById('inputYear').value);
+  const day   = parseInt(document.getElementById('inputDay').value);
+  const monthName = BULAN_INDO[month-1];
+  const daysInMonth = getDaysInMonth(year, month);
+
+  if (day < 1 || day > daysInMonth || isNaN(day)) {
+    setStatus('statusSave', `✗ Tanggal tidak valid (1–${daysInMonth})`, 'error');
+    return;
+  }
+
+  const key = getMonthKey(year, month);
+  document.getElementById('btnSave').disabled = true;
+  setStatus('statusSave', '⏳ Menyimpan ke cloud...', 'loading');
+
+  const monthData = await ensureMonthData(year, month, monthName);
+
+  if (monthData.days[String(day)]) {
+    if (!confirm(`Tanggal ${day} sudah ada data. Timpa dengan data baru?`)) {
+      document.getElementById('btnSave').disabled = false;
+      document.getElementById('statusSave').classList.remove('show');
+      return;
+    }
+  }
+
+  monthData.days[String(day)] = currentUpload.data;
+  await saveMonth(key, monthData);
+
+  setStatus('statusSave', `✓ Data tanggal ${day} ${monthName} ${year} berhasil disimpan!`, 'success');
+  document.getElementById('btnSave').disabled = false;
+
+  selectedMonthKey = key;
+  selectedDay = day;
+  updateMonthSelector();
+  renderDayGrid();
+  showDayDetail(day, currentUpload.data);
+
+  // Reset upload
+  currentUpload = null;
+  document.getElementById('previewSection').classList.add('hidden');
+  document.getElementById('btnSave').classList.remove('pulse');
+  document.getElementById('uploadZone').classList.remove('loaded');
+  document.getElementById('fileName').textContent = 'Seret atau klik pilih file CASUAL HARIAN';
+  document.getElementById('detectedInfo').classList.remove('show');
+  document.getElementById('fileInput').value = '';
+}
+
+// ===== DELETE DAY =====
+async function onDeleteDay() {
+  if (selectedDay === null || !selectedMonthKey) return;
+  const data = loadMonth(selectedMonthKey);
+  if (!data || !data.days[String(selectedDay)]) return;
+  const parts = selectedMonthKey.replace('unik_','').split('_');
+  if (!confirm(`Hapus data tanggal ${selectedDay} ${BULAN_INDO[parseInt(parts[1])-1]} ${parts[0]}?`)) return;
+  delete data.days[String(selectedDay)];
+  await saveMonth(selectedMonthKey, data);
+  selectedDay = null;
+  hideDayDetail();
+  renderDayGrid();
+}
+
+function onMonthChange() {
+  selectedMonthKey = document.getElementById('selectMonth').value;
+  selectedDay = null;
+  hideDayDetail();
+  renderDayGrid();
+}
+
+// ===== EXCEL DOWNLOAD =====
+function numToCol(n) {
+  let s = '';
+  while (n > 0) { n--; s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26); }
+  return s;
+}
+
+async function generateUnikWorkbook(monthData) {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Pendapatan Non Tunai Perbank');
+  const { year, month, monthName } = monthData;
+  const daysInMonth = getDaysInMonth(year, month);
+
+  // ---- STYLES ----
+  const fontTitle  = { name: 'Arial', size: 11, bold: true };
+  const fontHeader = { name: 'Arial', size: 10, bold: true };
+  const fontData   = { name: 'Arial', size: 10 };
+  const fontTotal  = { name: 'Arial', size: 10, bold: true };
+  const fontTotalBig = { name: 'Arial', size: 11, bold: true };
+  const borderThin = { top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'} };
+  const borderMed  = { top:{style:'medium'}, left:{style:'medium'}, bottom:{style:'medium'}, right:{style:'medium'} };
+  const alignCtr   = { horizontal:'center', vertical:'middle', wrapText: true };
+
+
+  const fillFor    = argb => ({ type:'pattern', pattern:'solid', fgColor:{ argb } });
+  const fillSilver = fillFor('FFD6DCE4');
+  const fillBlue   = fillFor('FFD9E1F2');
+  const fillYellow = fillFor('FFFFF2CC');
+  const fillGreen  = fillFor('FFE2EFDA');
+  const fillOrange = fillFor('FFFCE4D6');
+  const fillDkBlue = fillFor('FF2F75B6');
+  const fillLtBlue = fillFor('FFBDD7EE');
+  const fillSum    = fillFor('FFE8EDF5'); // slightly darker/blue-ish for the merged sum row
+
+  const bankDefs = [
+    { key: 'cash',    label: 'TUNAI / CASH',   fill: fillSilver },
+    { key: 'bri',     label: 'BRI BRIZZI',     fill: fillBlue   },
+    { key: 'mandiri', label: 'MANDIRI E-MONEY', fill: fillYellow },
+    { key: 'bca',     label: 'BCA FLAZZ',      fill: fillGreen  },
+    { key: 'bni',     label: 'BNI TAPCASH',    fill: fillOrange },
+  ];
+
+  // COLUMN LAYOUT: 5 banks x 3 cols (R2, R4, R6) = 15 cols per side
+  // PRODUKSI: B-P  |  TOTAL PROD: Q  |  PENDAPATAN: R-AF  |  TOTAL PEND: AG
+  // SUB TOTAL PROD: AH  |  SUB TOTAL PEND: AI
+  const CPB        = 3;
+  const PROD_START = 2; // B
+  const PROD_END   = PROD_START + bankDefs.length * CPB - 1; // P (16)
+  const TOTAL_PROD = PROD_END + 1; // Q (17)
+  const PEND_START = TOTAL_PROD + 1; // R (18)
+  const PEND_END   = PEND_START + bankDefs.length * CPB - 1; // AF (32)
+  const TOTAL_PEND = PEND_END + 1; // AG (33)
+  const SUB_PROD   = TOTAL_PEND + 1; // AH (34)
+  const SUB_PEND   = TOTAL_PEND + 2; // AI (35)
+  const LAST_COL   = SUB_PEND; // AI (35)
+
+  const colL = numToCol;
+
+  const prodBankCols = bankDefs.map((b, bi) => {
+    const base = PROD_START + bi * CPB;
+    return { r2: base, r4: base+1, r6: base+2, fill: b.fill };
+  });
+  const pendBankCols = bankDefs.map((b, bi) => {
+    const base = PEND_START + bi * CPB;
+    return { r2: base, r4: base+1, r6: base+2, fill: b.fill };
+  });
+
+  function AC(row, col, val, font, fill, border, align, numFmt) {
+    const c = ws.getCell(row, col);
+    if (val !== undefined) c.value = val;
+    if (font)   c.font      = font;
+    if (fill)   c.fill      = fill;
+    if (border) c.border    = border;
+    if (align)  c.alignment = align;
+    if (numFmt) c.numFmt    = numFmt;
+    return c;
+  }
+
+  // ---- ROWS 1-3: TITLE ----
+  const lastL = colL(LAST_COL);
+  ws.mergeCells(`A1:${lastL}1`);
+  AC(1,1,'REKONSILIASI DATA PRODUKSI & PENDAPATAN PENGELOLAAN PARKIR KENDARAAN GLOBAL NON TUNAI (UNIK)',
+    {...fontTitle,size:12,color:{argb:'FFFFFFFF'}}, fillDkBlue, null, alignCtr);
+
+  ws.mergeCells(`A2:${lastL}2`);
+  AC(2,1,'BANDARA SYAMSUDIN NOOR BANJARMASIN', fontTitle, fillLtBlue, null, alignCtr);
+
+  ws.mergeCells(`A3:${lastL}3`);
+  AC(3,1,`${monthName.toUpperCase()} ${year}`, fontTitle, fillLtBlue, null, alignCtr);
+
+  // ---- ROW 4: Category Big Labels ----
+  ws.mergeCells(4,1,6,1);
+  AC(4,1,'TGL', fontHeader, fillSilver, borderThin, alignCtr);
+
+  ws.mergeCells(4, PROD_START, 4, PROD_END);
+  AC(4, PROD_START, 'PRODUKSI', fontHeader, fillDkBlue, borderThin, alignCtr);
+  ws.getCell(4, PROD_START).font = {...fontHeader, size:11, color:{argb:'FFFFFFFF'}};
+
+  ws.mergeCells(4, TOTAL_PROD, 6, TOTAL_PROD);
+  AC(4, TOTAL_PROD, `TOTAL
+PRODUKSI`, fontHeader, fillSilver, borderThin, alignCtr);
+
+  ws.mergeCells(4, PEND_START, 4, PEND_END);
+  AC(4, PEND_START, 'PENDAPATAN', fontHeader, fillDkBlue, borderThin, alignCtr);
+  ws.getCell(4, PEND_START).font = {...fontHeader, size:11, color:{argb:'FFFFFFFF'}};
+
+  ws.mergeCells(4, TOTAL_PEND, 6, TOTAL_PEND);
+  AC(4, TOTAL_PEND, `TOTAL
+PENDAPATAN`, fontHeader, fillSilver, borderThin, alignCtr);
+
+  ws.mergeCells(4, SUB_PROD, 6, SUB_PROD);
+  AC(4, SUB_PROD, `SUB TOTAL
+PRODUKSI
+(3 hari)`, fontHeader, fillDkBlue, borderMed, alignCtr);
+  ws.getCell(4, SUB_PROD).font = {...fontHeader, color:{argb:'FFFFFFFF'}};
+
+  ws.mergeCells(4, SUB_PEND, 6, SUB_PEND);
+  AC(4, SUB_PEND, `SUB TOTAL
+PENDAPATAN
+(3 hari)`, fontHeader, fillDkBlue, borderMed, alignCtr);
+  ws.getCell(4, SUB_PEND).font = {...fontHeader, color:{argb:'FFFFFFFF'}};
+
+  // ---- ROW 5: Bank names (3-col span each) ----
+  bankDefs.forEach((bank, bi) => {
+    const pp = prodBankCols[bi];
+    ws.mergeCells(5, pp.r2, 5, pp.r6);
+    AC(5, pp.r2, bank.label, fontHeader, bank.fill, borderThin, alignCtr);
+    const pd = pendBankCols[bi];
+    ws.mergeCells(5, pd.r2, 5, pd.r6);
+    AC(5, pd.r2, bank.label, fontHeader, bank.fill, borderThin, alignCtr);
+  });
+
+  // ---- ROW 6: Roda 2 | Roda 4 | Roda 6 ----
+  bankDefs.forEach((bank, bi) => {
+    const pp = prodBankCols[bi];
+    const pd = pendBankCols[bi];
+    AC(6, pp.r2, 'Roda 2', fontHeader, bank.fill, borderThin, alignCtr);
+    AC(6, pp.r4, 'Roda 4', fontHeader, bank.fill, borderThin, alignCtr);
+    AC(6, pp.r6, 'Roda 6', fontHeader, bank.fill, borderThin, alignCtr);
+    AC(6, pd.r2, 'Roda 2', fontHeader, bank.fill, borderThin, alignCtr);
+    AC(6, pd.r4, 'Roda 4', fontHeader, bank.fill, borderThin, alignCtr);
+    AC(6, pd.r6, 'Roda 6', fontHeader, bank.fill, borderThin, alignCtr);
+  });
+
+  // ---- DATA ROWS ----
+  const DSR = 7; // dataStartRow
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const R  = DSR + d - 1;
+    const dd = monthData.days[String(d)];
+
+    // Date
+    const dc = ws.getCell(R, 1);
+    dc.value = new Date(Date.UTC(year, month-1, d, 12, 0, 0));
+    dc.numFmt = 'dd/mm/yyyy';
+    dc.font = fontData; dc.alignment = alignCtr;
+    dc.border = borderThin; dc.fill = fillSilver;
+
+    // PRODUKSI: R2, R4, R6
+    bankDefs.forEach((bank, bi) => {
+      const pp = prodBankCols[bi];
+      const v2 = dd ? (dd[`${bank.key}_r2_qty`] || 0) : 0;
+      const v4 = dd ? (dd[`${bank.key}_r4_qty`] || 0) : 0;
+      const v6 = dd ? (dd[`${bank.key}_r6_qty`] || 0) : 0;
+      AC(R, pp.r2, v2, fontData, bank.fill, borderThin, alignCtr);
+      AC(R, pp.r4, v4, fontData, bank.fill, borderThin, alignCtr);
+      AC(R, pp.r6, v6, fontData, bank.fill, borderThin, alignCtr);
+    });
+
+    // TOTAL PRODUKSI = sum of all prod columns
+    const tpC = ws.getCell(R, TOTAL_PROD);
+    tpC.value = {formula: `SUM(${colL(PROD_START)}${R}:${colL(PROD_END)}${R})`};
+    tpC.font = fontTotal; tpC.alignment = alignCtr; tpC.border = borderThin; tpC.fill = fillSilver;
+
+    // PENDAPATAN: R2, R4, R6
+    bankDefs.forEach((bank, bi) => {
+      const pd = pendBankCols[bi];
+      const v2 = dd ? (dd[`${bank.key}_r2_amt`] || 0) : 0;
+      const v4 = dd ? (dd[`${bank.key}_r4_amt`] || 0) : 0;
+      const v6 = dd ? (dd[`${bank.key}_r6_amt`] || 0) : 0;
+      AC(R, pd.r2, v2, fontData, bank.fill, borderThin, alignCtr, '#,##0');
+      AC(R, pd.r4, v4, fontData, bank.fill, borderThin, alignCtr, '#,##0');
+      AC(R, pd.r6, v6, fontData, bank.fill, borderThin, alignCtr, '#,##0');
+    });
+
+    // TOTAL PENDAPATAN = sum of all pend columns
+    const tpendC = ws.getCell(R, TOTAL_PEND);
+    tpendC.value = {formula: `SUM(${colL(PEND_START)}${R}:${colL(PEND_END)}${R})`};
+    tpendC.numFmt = '#,##0'; tpendC.font = fontTotal; tpendC.alignment = alignCtr;
+    tpendC.border = borderThin; tpendC.fill = fillSilver;
+
+    // SUB-TOTAL per 3 hari
+    const tri = (d - 1) % 3;
+    if (tri === 0 || d === daysInMonth) {
+      const rowEnd = Math.min(R + (2 - tri), DSR + daysInMonth - 1);
+
+      if (rowEnd > R) ws.mergeCells(R, SUB_PROD, rowEnd, SUB_PROD);
+      const spC = ws.getCell(R, SUB_PROD);
+      spC.value = {formula: R===rowEnd ? `${colL(TOTAL_PROD)}${R}` : `SUM(${colL(TOTAL_PROD)}${R}:${colL(TOTAL_PROD)}${rowEnd})`};
+      spC.font = {...fontTotal,color:{argb:'FFFFFFFF'}}; spC.alignment = alignCtr;
+      spC.border = borderMed; spC.fill = fillDkBlue; spC.numFmt = '#,##0';
+
+      if (rowEnd > R) ws.mergeCells(R, SUB_PEND, rowEnd, SUB_PEND);
+      const spendC = ws.getCell(R, SUB_PEND);
+      spendC.value = {formula: R===rowEnd ? `${colL(TOTAL_PEND)}${R}` : `SUM(${colL(TOTAL_PEND)}${R}:${colL(TOTAL_PEND)}${rowEnd})`};
+      spendC.font = {...fontTotal,color:{argb:'FFFFFFFF'}}; spendC.alignment = alignCtr;
+      spendC.border = borderMed; spendC.fill = fillDkBlue; spendC.numFmt = '#,##0';
+    }
+  }
+
+  // ---- TOTAL ROW (Column-wise sums) ----
+  const totalRow = DSR + daysInMonth;
+  AC(totalRow, 1, 'TOTAL', fontTotal, fillSilver, borderThin, alignCtr);
+
+  const sumCols = [];
+  bankDefs.forEach((_, bi) => {
+    const pp = prodBankCols[bi];
+    sumCols.push({col:pp.r2, fill:bankDefs[bi].fill, isAmt:false});
+    sumCols.push({col:pp.r4, fill:bankDefs[bi].fill, isAmt:false});
+    sumCols.push({col:pp.r6, fill:bankDefs[bi].fill, isAmt:false});
+  });
+  sumCols.push({col:TOTAL_PROD, fill:fillSilver, isAmt:false});
+  bankDefs.forEach((_, bi) => {
+    const pd = pendBankCols[bi];
+    sumCols.push({col:pd.r2, fill:bankDefs[bi].fill, isAmt:true});
+    sumCols.push({col:pd.r4, fill:bankDefs[bi].fill, isAmt:true});
+    sumCols.push({col:pd.r6, fill:bankDefs[bi].fill, isAmt:true});
+  });
+  sumCols.push({col:TOTAL_PEND, fill:fillSilver, isAmt:true });
+  sumCols.push({col:SUB_PROD,   fill:fillDkBlue, isAmt:false});
+  sumCols.push({col:SUB_PEND,   fill:fillDkBlue, isAmt:true });
+
+  sumCols.forEach(({col, fill, isAmt}) => {
+    const c = ws.getCell(totalRow, col);
+    c.value = {formula:`SUM(${colL(col)}${DSR}:${colL(col)}${totalRow-1})`};
+    const isDk = fill === fillDkBlue;
+    c.font = isDk ? {...fontTotal,color:{argb:'FFFFFFFF'}} : fontTotal;
+    c.alignment = alignCtr; c.border = borderThin; c.fill = fill;
+    if (isAmt) c.numFmt = '#,##0';
+  });
+
+  // ---- MERGED TOTAL ROW (R2+R4+R6 per bank, below TOTAL) ----
+  const grandRow = totalRow + 1;
+  // Make the A column cell empty but styled
+  AC(grandRow, 1, '', fontTotal, fillSum, borderThin, alignCtr);
+
+  bankDefs.forEach((_, bi) => {
+    const pp = prodBankCols[bi];
+    const pd = pendBankCols[bi];
+    
+    // PRODUKSI side merged total
+    ws.mergeCells(grandRow, pp.r2, grandRow, pp.r6);
+    const tcProd = ws.getCell(grandRow, pp.r2);
+    tcProd.value = {formula:`${colL(pp.r2)}${totalRow}+${colL(pp.r4)}${totalRow}+${colL(pp.r6)}${totalRow}`};
+    tcProd.font = fontTotalBig; tcProd.alignment = alignCtr; 
+    tcProd.border = borderThin; tcProd.fill = fillSum; tcProd.numFmt = '#,##0';
+    
+    // PENDAPATAN side merged total
+    ws.mergeCells(grandRow, pd.r2, grandRow, pd.r6);
+    const tcPend = ws.getCell(grandRow, pd.r2);
+    tcPend.value = {formula:`${colL(pd.r2)}${totalRow}+${colL(pd.r4)}${totalRow}+${colL(pd.r6)}${totalRow}`};
+    tcPend.font = fontTotalBig; tcPend.alignment = alignCtr; 
+    tcPend.border = borderThin; tcPend.fill = fillSum; tcPend.numFmt = '#,##0';
+  });
+  
+  // Total of Totals
+  const tProdC = ws.getCell(grandRow, TOTAL_PROD);
+  tProdC.value = {formula:`${colL(TOTAL_PROD)}${totalRow}`};
+  tProdC.font = fontTotalBig; tProdC.alignment = alignCtr; tProdC.border = borderThin; tProdC.fill = fillSilver;
+  
+  const tPendC = ws.getCell(grandRow, TOTAL_PEND);
+  tPendC.value = {formula:`${colL(TOTAL_PEND)}${totalRow}`};
+  tPendC.font = fontTotalBig; tPendC.alignment = alignCtr; tPendC.border = borderThin; tPendC.fill = fillSilver; tPendC.numFmt = '#,##0';
+
+  // Make sub totals look clean
+  AC(grandRow, SUB_PROD, '', fontTotal, fillDkBlue, borderMed, alignCtr);
+  AC(grandRow, SUB_PEND, '', fontTotal, fillDkBlue, borderMed, alignCtr);
+
+
+  // ---- COLUMN WIDTHS ----
+  const colWidths = [{width:11}]; // A TGL
+  bankDefs.forEach(() => {
+    colWidths.push({width:8},{width:8},{width:8}); // R2 R4 R6 (prod)
+  });
+  colWidths.push({width:11}); // TOTAL PROD
+  bankDefs.forEach(() => {
+    colWidths.push({width:11},{width:11},{width:11}); // R2 R4 R6 (pend)
+  });
+  colWidths.push({width:14}); // TOTAL PEND
+  colWidths.push({width:13},{width:15}); // SUB PROD, SUB PEND
+  ws.columns = colWidths;
+
+  // ---- ROW HEIGHTS ----
+  ws.getRow(1).height = 32;
+  ws.getRow(2).height = 18;
+  ws.getRow(3).height = 18;
+  ws.getRow(4).height = 22;
+  ws.getRow(5).height = 20;
+  ws.getRow(6).height = 18;
+  ws.getRow(grandRow).height = 22; // Make the bottom merged row a bit taller
+
+  return wb;
+}
+
+async function onDownload() {
+  if (!selectedMonthKey) return;
+  const data = loadMonth(selectedMonthKey);
+  if (!data || Object.keys(data.days).length === 0) {
+    alert('Tidak ada data untuk didownload.');
+    return;
+  }
+  const btn = document.getElementById('btnDownload');
+  const oriText = btn.textContent;
+  btn.textContent = 'Menyiapkan Excel...';
+  btn.disabled = true;
+  try {
+    const wbObj = await generateUnikWorkbook(data);
+    const buffer = await wbObj.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const filename = `UNIK ${data.monthName} ${data.year}.xlsx`;
+    if (window.saveAs) {
+      window.saveAs(blob, filename);
+    } else {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  } catch(err) {
+    console.error('Download error:', err);
+    alert('Gagal download Excel: ' + err.message);
+  } finally {
+    btn.textContent = oriText;
+    btn.disabled = false;
+  }
+}
+
+// ===== INIT =====
+(async function init() {
+  setStatus('statusSave', '⏳ Menyinkronkan dengan cloud...', 'loading');
+  try {
+    const { data, error } = await supabaseClient.from('app_settings').select('*').like('setting_key', 'unik_%');
+    if (error) throw error;
+    data.forEach(row => { cloudData[row.setting_key] = row.setting_value; });
+  } catch(e) {
+    setStatus('statusSave', '✗ Gagal memuat data dari cloud', 'error');
+    console.error(e);
+  }
+  const now = new Date();
+  selectedMonthKey = getMonthKey(now.getFullYear(), now.getMonth()+1);
+  await ensureMonthData(now.getFullYear(), now.getMonth()+1, BULAN_INDO[now.getMonth()]);
+  updateMonthSelector();
+  renderDayGrid();
+  if (document.getElementById('statusSave').textContent.includes('Menyinkronkan')) {
+    document.getElementById('statusSave').classList.remove('show');
+  }
+})();
+</script>
+</body>
+</html>
