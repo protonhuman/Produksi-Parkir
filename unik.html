@@ -471,6 +471,54 @@ function parseUnikData(ws) {
     return String(cell.v).trim().toUpperCase();
   };
 
+  // 1. DYNAMICALLY DETECT COLUMNS FOR PAYMENT METHODS
+  const bankCols = { cash: null, bri: null, mandiri: null, bca: null, bni: null };
+  let headerRowIdx = -1;
+  
+  // Scan first 20 rows to find the bank headers (they are usually around row 8 or 9)
+  for (let r = 0; r < 20; r++) {
+    let foundBank = false;
+    // Scan columns 30 to 60 where payment methods usually reside
+    for (let c = 30; c <= 60; c++) {
+      const val = getStr(r, c);
+      if (val.includes('MANDIRI') || val.includes('BRIZZI') || val.includes('FLAZZ') || val.includes('TAPCASH') || val === 'TUNAI / CASH') {
+        headerRowIdx = r;
+        foundBank = true;
+        break;
+      }
+    }
+    if (foundBank) break;
+  }
+
+  if (headerRowIdx !== -1) {
+    // We found the row with bank names, now map them
+    for (let c = 30; c <= 60; c++) {
+      const val = getStr(headerRowIdx, c);
+      let bankKey = null;
+      
+      if (val.includes('TUNAI') || val.includes('CASH')) bankKey = 'cash';
+      else if (val.includes('BRI')) bankKey = 'bri';
+      else if (val.includes('MANDIRI')) bankKey = 'mandiri';
+      else if (val.includes('BCA') || val.includes('FLAZZ')) bankKey = 'bca';
+      else if (val.includes('BNI') || val.includes('TAPCASH')) bankKey = 'bni';
+
+      if (bankKey) {
+        // Find Qty and Amount in the row immediately below this one
+        let qtyCol = -1, amtCol = -1;
+        // Search up to 3 columns to the right (to handle merged cells)
+        for (let lookC = c; lookC <= c + 3; lookC++) {
+          const subVal = getStr(headerRowIdx + 1, lookC);
+          if (subVal === 'QTY' && qtyCol === -1) qtyCol = lookC;
+          if (subVal === 'AMOUNT' && amtCol === -1) amtCol = lookC;
+        }
+        if (qtyCol !== -1 && amtCol !== -1) {
+          bankCols[bankKey] = { qtyCol, amtCol };
+        }
+      }
+    }
+  }
+
+  // 2. PARSE DATA ROWS
   for (let r = 0; r <= range.e.r; r++) {
     const vehType = getStr(r, COL_VEH);
     if (!vehType) continue;
@@ -483,10 +531,13 @@ function parseUnikData(ws) {
 
     if (!grpKey) continue;
 
-    // Accumulate each bank
+    // Accumulate each bank (only if the columns were detected in this file)
     BANKS.forEach(bank => {
-      result[`${bank.key}_${grpKey}_qty`] += getNum(r, bank.qtyCol);
-      result[`${bank.key}_${grpKey}_amt`] += getNum(r, bank.amtCol);
+      const map = bankCols[bank.key];
+      if (map) {
+        result[`${bank.key}_${grpKey}_qty`] += getNum(r, map.qtyCol);
+        result[`${bank.key}_${grpKey}_amt`] += getNum(r, map.amtCol);
+      }
     });
   }
 
