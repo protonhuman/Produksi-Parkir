@@ -496,11 +496,11 @@ function parseUnikData(ws) {
       const val = getStr(headerRowIdx, c);
       let bankKey = null;
       
-      if (val.includes('TUNAI') || val.includes('CASH')) bankKey = 'cash';
+      if (val.includes('BNI') || val.includes('TAPCASH')) bankKey = 'bni';
       else if (val.includes('BRI')) bankKey = 'bri';
       else if (val.includes('MANDIRI')) bankKey = 'mandiri';
       else if (val.includes('BCA') || val.includes('FLAZZ')) bankKey = 'bca';
-      else if (val.includes('BNI') || val.includes('TAPCASH')) bankKey = 'bni';
+      else if (val.includes('TUNAI') || val.includes('CASH')) bankKey = 'cash';
 
       if (bankKey) {
         // Find Qty and Amount in the row immediately below this one
