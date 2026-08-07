@@ -129,11 +129,33 @@
   /* === FOOTNOTE === */
   .footnote { margin-top: 32px; font-size: 10px; color: var(--text-dim); text-align: center; letter-spacing: 1px; line-height: 1.8; }
   .pill { display: inline-block; padding: 2px 8px; background: rgba(255,255,255,0.05); border-radius: 2px; font-size: 10px; color: var(--text-dim); border: 1px solid var(--border); }
+
+/* PIN OVERLAY CSS */
+#pinOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+#pinBox { background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 350px; width: 90%; }
+.dark-theme #pinBox { background: #1e1e1e; color: #eee; }
+#pinBox h2 { margin-top: 0; margin-bottom: 15px; font-size: 1.2rem; }
+#pinInput { width: 100%; padding: 12px; margin-bottom: 15px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+.dark-theme #pinInput { background: #2d2d2d; border-color: #444; color: #fff; }
+#pinBtn { background: #2563eb; color: white; border: none; padding: 12px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+#pinBtn:hover { background: #1d4ed8; }
+#pinError { color: #dc2626; margin-bottom: 15px; display: none; font-weight: bold; font-size: 0.9rem; }
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
+  <!-- PIN SECURE OVERLAY -->
+  <div id="pinOverlay">
+    <div id="pinBox">
+      <h2>🔒 Masukkan PIN Keamanan</h2>
+      <div id="pinError">PIN Salah atau Server Error!</div>
+      <input type="password" id="pinInput" placeholder="••••" maxlength="10" onkeypress="if(event.key === 'Enter') submitPin()" />
+      <button id="pinBtn" onclick="submitPin()">Buka Kunci</button>
+    </div>
+  </div>
+
 <div class="container">
 
   <header style="position: relative;">
@@ -145,9 +167,9 @@
     <img src="logo.png" alt="Angkasa Pura Supports" class="logo-img" onerror="this.style.display='none'">
     <div class="header-badge">PT Angkasa Pura Supports</div>
     <nav class="nav-menu">
-      <a href="index.html" class="nav-link">Produksi Parkir</a>
-      <a href="statistik.html" class="nav-link active">Statistik Parkir</a>
-      <a href="unik.html" class="nav-link">Rekapitulasi UNIK</a>
+      <a href="/" class="nav-link">Produksi Parkir</a>
+      <a href="/statistik" class="nav-link active">Statistik Parkir</a>
+      <a href="/unik" class="nav-link">Rekapitulasi UNIK</a>
     </nav>
     <h1>Statistik <span>Parkir</span></h1>
     <div class="subtitle">BANDARA INTERNASIONAL SYAMSUDIN NOOR — BANJARBARU</div>
@@ -319,9 +341,60 @@ const BLOCKS = [
 const CATEGORIES = BLOCKS.map(b => b.key);
 
 // ===== STATE & SUPABASE =====
-const supabaseUrl = 'https://nbxcvigngtzeymoleuvc.supabase.co';
-const supabaseKey = 'sb_publishable_C8ce4W1sC4VoDiRKnwkbhw_faMXX5lT';
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+let supabaseUrl, supabaseKey, supabaseClient, defaultGasUrl;
+
+async function checkPinAndInit(pin) {
+  const btn = document.getElementById('pinBtn');
+  const err = document.getElementById('pinError');
+  btn.textContent = 'Memeriksa...';
+  btn.disabled = true;
+  err.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/config', { headers: { 'x-app-pin': pin } });
+    if (!res.ok) throw new Error('Invalid PIN');
+    
+    const conf = await res.json();
+    supabaseUrl = conf.supabaseUrl;
+    supabaseKey = conf.supabaseKey;
+    if (typeof supabase !== 'undefined') {
+      supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+    }
+    if (conf.defaultGasUrl && typeof cachedGASList !== 'undefined') {
+      cachedGASList = [{ name: 'Produksi Parkir (Default)', url: conf.defaultGasUrl }];
+    }
+    
+    document.getElementById('pinOverlay').style.display = 'none';
+    sessionStorage.setItem('appPin', pin);
+    
+    // Call the initialization functions for each page if they exist
+    if (typeof initPageAfterPin === 'function') {
+      initPageAfterPin();
+    }
+  } catch (e) {
+    err.style.display = 'block';
+    err.textContent = 'PIN Salah atau koneksi gagal!';
+    document.getElementById('pinInput').value = '';
+    sessionStorage.removeItem('appPin');
+    btn.textContent = 'Buka Kunci';
+    btn.disabled = false;
+  }
+}
+
+function submitPin() {
+  const pin = document.getElementById('pinInput').value;
+  if (!pin) return;
+  checkPinAndInit(pin);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const savedPin = sessionStorage.getItem('appPin');
+  if (savedPin) {
+    checkPinAndInit(savedPin);
+  }
+});
+
 
 let cloudData = {}; // Cache of all downloaded months
 let currentUpload = null;   // { day, month, year, monthName, data:{key: [13 values]} }

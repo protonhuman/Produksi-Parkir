@@ -5,6 +5,12 @@ node_modules/
 *.csv
 *.txt
 *.pdf
+*.json
+!package.json
+!package-lock.json
+!vercel.json
+test_*.js
+fetch_sheets.js
 old_index.html
 index_original.html
 keep-alive.html
