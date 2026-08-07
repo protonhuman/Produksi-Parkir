@@ -1210,7 +1210,7 @@ async function onDownload() {
 }
 
 // ===== INIT =====
-(async function init() {
+async function initPageAfterPin() {
   setStatus('statusSave', '⏳ Menyinkronkan dengan cloud...', 'loading');
   try {
     const { data, error } = await supabaseClient.from('app_settings').select('*').like('setting_key', 'unik_%');
@@ -1228,7 +1228,7 @@ async function onDownload() {
   if (document.getElementById('statusSave').textContent.includes('Menyinkronkan')) {
     document.getElementById('statusSave').classList.remove('show');
   }
-})();
+}
 </script>
 </body>
 </html>

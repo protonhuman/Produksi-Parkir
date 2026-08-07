@@ -471,7 +471,6 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Auto-set tanggal hari ini + load GAS URLs saat halaman dimuat
-(function() {
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -487,7 +486,6 @@ document.addEventListener('visibilitychange', () => {
     // Ping awal saat halaman dimuat
     keepAlivePing();
 }
-})();
 
 
 const SHIFTS = {
