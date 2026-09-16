@@ -1119,6 +1119,17 @@ async function generateUnikWorkbook(monthData, startDay, endDay) {
   return wb;
 }
 
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
+}
+
 async function onDownload(type = 'excel') {
   if (!selectedMonthKey) return;
   const data = loadMonth(selectedMonthKey);
@@ -1136,15 +1147,28 @@ async function onDownload(type = 'excel') {
   if (type === 'pdf') {
     const btn = document.getElementById('btnDownloadPdf');
     const oriText = btn.textContent;
-    btn.textContent = 'Menyiapkan PDF...';
     btn.disabled = true;
     try {
+      btn.textContent = 'Memuat Font...';
+      const [regRes, boldRes] = await Promise.all([
+        fetch('/fonts/AptosNarrow-Regular.ttf'),
+        fetch('/fonts/AptosNarrow-Bold.ttf')
+      ]);
+      const regBuf = await regRes.arrayBuffer();
+      const boldBuf = await boldRes.arrayBuffer();
+
+      btn.textContent = 'Menyiapkan PDF...';
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape', format: 'a4' });
 
+      doc.addFileToVFS('AptosNarrow-Regular.ttf', arrayBufferToBase64(regBuf));
+      doc.addFileToVFS('AptosNarrow-Bold.ttf', arrayBufferToBase64(boldBuf));
+      doc.addFont('AptosNarrow-Regular.ttf', 'Aptos Narrow', 'normal');
+      doc.addFont('AptosNarrow-Bold.ttf', 'Aptos Narrow', 'bold');
+
       // Title
       doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
+      doc.setFont("Aptos Narrow", "bold");
       const title1 = "LAMPIRAN";
       const title2 = "REKAPITULASI PENDAPATAN PARKIR CASUAL UANG ELEKTRONIK (UNIK)";
       const title3 = "KANTOR CABANG PT. ANGKASA PURA SUPPORTS (BANJARBARU)";
@@ -1251,9 +1275,9 @@ async function onDownload(type = 'excel') {
           ],
           [
             { content: 'PRODUKSI', colSpan: 3, styles: { halign: 'center', fillColor: [180, 198, 231] } },
-            { content: 'TOTAL\\nPRODUKSI', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231] } },
+            { content: 'TOTAL\\PRODUKSI', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231] } },
             { content: 'PENDAPATAN', colSpan: 3, styles: { halign: 'center', fillColor: [198, 239, 206] } },
-            { content: 'TOTAL\\nPENDAPATAN', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206] } }
+            { content: 'TOTAL\\PENDAPATAN', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206] } }
           ],
           [
             { content: 'R2', styles: { halign: 'center', fillColor: [180, 198, 231] } },
@@ -1280,7 +1304,7 @@ async function onDownload(type = 'excel') {
           10: { cellWidth: 30 }
         },
         styles: {
-          font: 'helvetica',
+          font: 'Aptos Narrow',
           fontSize: 8,
           textColor: [0, 0, 0],
           lineWidth: 0.1,
@@ -1301,7 +1325,7 @@ async function onDownload(type = 'excel') {
           // If the page breaks naturally, re-draw the title on the new page
           if (data.pageNumber > 1) {
             doc.setFontSize(14);
-            doc.setFont("helvetica", "bold");
+            doc.setFont("Aptos Narrow", "bold");
             doc.text(title1, w/2, 15, { align: 'center' });
             doc.setFontSize(11);
             doc.text(title2, w/2, 22, { align: 'center' });
