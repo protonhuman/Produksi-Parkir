@@ -1168,74 +1168,74 @@ function generateHTMLTable(monthData, startDay, endDay) {
     let dayTotal = { p_r2: 0, p_r4: 0, p_r6: 0, p_tot: 0, a_r2: 0, a_r4: 0, a_r6: 0, a_tot: 0 };
 
     html += '<tr>';
-    html += \`<td rowspan="8" style="border: 1px solid #000; vertical-align: middle;">\${d}</td>\`;
-    html += \`<td rowspan="8" style="border: 1px solid #000; vertical-align: middle;">\${d} \${monthName} \${year}</td>\`;
+    html += `<td rowspan="8" style="border: 1px solid #000; vertical-align: middle;">${d}</td>`;
+    html += `<td rowspan="8" style="border: 1px solid #000; vertical-align: middle;">${d} ${monthName} ${year}</td>`;
     
     banks.forEach((bank, idx) => {
       if (idx > 0) html += '<tr>';
-      html += \`<td style="border: 1px solid #000; text-align: left; padding: 4px; font-weight: bold;">\${bank.label}</td>\`;
+      html += `<td style="border: 1px solid #000; text-align: left; padding: 4px; font-weight: bold;">${bank.label}</td>`;
 
-      const pR2 = dd ? (dd[\`\${bank.key}_r2_qty\`] || 0) : 0;
-      const pR4 = dd ? (dd[\`\${bank.key}_r4_qty\`] || 0) : 0;
-      const pR6 = dd ? (dd[\`\${bank.key}_r6_qty\`] || 0) : 0;
+      const pR2 = dd ? (dd[`${bank.key}_r2_qty`] || 0) : 0;
+      const pR4 = dd ? (dd[`${bank.key}_r4_qty`] || 0) : 0;
+      const pR6 = dd ? (dd[`${bank.key}_r6_qty`] || 0) : 0;
       const pTot = pR2 + pR4 + pR6;
 
-      const aR2 = dd ? (dd[\`\${bank.key}_r2_amt\`] || 0) : 0;
-      const aR4 = dd ? (dd[\`\${bank.key}_r4_amt\`] || 0) : 0;
-      const aR6 = dd ? (dd[\`\${bank.key}_r6_amt\`] || 0) : 0;
+      const aR2 = dd ? (dd[`${bank.key}_r2_amt`] || 0) : 0;
+      const aR4 = dd ? (dd[`${bank.key}_r4_amt`] || 0) : 0;
+      const aR6 = dd ? (dd[`${bank.key}_r6_amt`] || 0) : 0;
       const aTot = aR2 + aR4 + aR6;
 
       dayTotal.p_r2 += pR2; dayTotal.p_r4 += pR4; dayTotal.p_r6 += pR6; dayTotal.p_tot += pTot;
       dayTotal.a_r2 += aR2; dayTotal.a_r4 += aR4; dayTotal.a_r6 += aR6; dayTotal.a_tot += aTot;
 
-      html += \`<td style="border: 1px solid #000; background-color: #B4C6E7;">\${pR2.toLocaleString('id-ID')}</td>\`;
-      html += \`<td style="border: 1px solid #000; background-color: #B4C6E7;">\${pR4.toLocaleString('id-ID')}</td>\`;
-      html += \`<td style="border: 1px solid #000; background-color: #B4C6E7;">\${pR6.toLocaleString('id-ID')}</td>\`;
-      html += \`<td style="border: 1px solid #000; background-color: #B4C6E7; font-weight: bold;">\${pTot.toLocaleString('id-ID')}</td>\`;
+      html += `<td style="border: 1px solid #000; background-color: #B4C6E7;">${pR2.toLocaleString('id-ID')}</td>`;
+      html += `<td style="border: 1px solid #000; background-color: #B4C6E7;">${pR4.toLocaleString('id-ID')}</td>`;
+      html += `<td style="border: 1px solid #000; background-color: #B4C6E7;">${pR6.toLocaleString('id-ID')}</td>`;
+      html += `<td style="border: 1px solid #000; background-color: #B4C6E7; font-weight: bold;">${pTot.toLocaleString('id-ID')}</td>`;
 
-      html += \`<td style="border: 1px solid #000; background-color: #C6EFCE;">\${aR2.toLocaleString('id-ID')}</td>\`;
-      html += \`<td style="border: 1px solid #000; background-color: #C6EFCE;">\${aR4.toLocaleString('id-ID')}</td>\`;
-      html += \`<td style="border: 1px solid #000; background-color: #C6EFCE;">\${aR6.toLocaleString('id-ID')}</td>\`;
-      html += \`<td style="border: 1px solid #000; background-color: #C6EFCE; font-weight: bold;">\${aTot.toLocaleString('id-ID')}</td>\`;
+      html += `<td style="border: 1px solid #000; background-color: #C6EFCE;">${aR2.toLocaleString('id-ID')}</td>`;
+      html += `<td style="border: 1px solid #000; background-color: #C6EFCE;">${aR4.toLocaleString('id-ID')}</td>`;
+      html += `<td style="border: 1px solid #000; background-color: #C6EFCE;">${aR6.toLocaleString('id-ID')}</td>`;
+      html += `<td style="border: 1px solid #000; background-color: #C6EFCE; font-weight: bold;">${aTot.toLocaleString('id-ID')}</td>`;
       html += '</tr>';
     });
 
     html += '<tr>';
-    html += \`<td style="border: 1px solid #000; font-weight: bold;">TOTAL</td>\`;
-    html += \`<td style="border: 1px solid #000; background-color: #B4C6E7; font-weight: bold;">\${dayTotal.p_r2.toLocaleString('id-ID')}</td>\`;
-    html += \`<td style="border: 1px solid #000; background-color: #B4C6E7; font-weight: bold;">\${dayTotal.p_r4.toLocaleString('id-ID')}</td>\`;
-    html += \`<td style="border: 1px solid #000; background-color: #B4C6E7; font-weight: bold;">\${dayTotal.p_r6.toLocaleString('id-ID')}</td>\`;
-    html += \`<td style="border: 1px solid #000; background-color: #B4C6E7; font-weight: bold;">\${dayTotal.p_tot.toLocaleString('id-ID')}</td>\`;
+    html += `<td style="border: 1px solid #000; font-weight: bold;">TOTAL</td>`;
+    html += `<td style="border: 1px solid #000; background-color: #B4C6E7; font-weight: bold;">${dayTotal.p_r2.toLocaleString('id-ID')}</td>`;
+    html += `<td style="border: 1px solid #000; background-color: #B4C6E7; font-weight: bold;">${dayTotal.p_r4.toLocaleString('id-ID')}</td>`;
+    html += `<td style="border: 1px solid #000; background-color: #B4C6E7; font-weight: bold;">${dayTotal.p_r6.toLocaleString('id-ID')}</td>`;
+    html += `<td style="border: 1px solid #000; background-color: #B4C6E7; font-weight: bold;">${dayTotal.p_tot.toLocaleString('id-ID')}</td>`;
 
-    html += \`<td style="border: 1px solid #000; background-color: #C6EFCE; font-weight: bold;">\${dayTotal.a_r2.toLocaleString('id-ID')}</td>\`;
-    html += \`<td style="border: 1px solid #000; background-color: #C6EFCE; font-weight: bold;">\${dayTotal.a_r4.toLocaleString('id-ID')}</td>\`;
-    html += \`<td style="border: 1px solid #000; background-color: #C6EFCE; font-weight: bold;">\${dayTotal.a_r6.toLocaleString('id-ID')}</td>\`;
-    html += \`<td style="border: 1px solid #000; background-color: #C6EFCE; font-weight: bold;">\${dayTotal.a_tot.toLocaleString('id-ID')}</td>\`;
+    html += `<td style="border: 1px solid #000; background-color: #C6EFCE; font-weight: bold;">${dayTotal.a_r2.toLocaleString('id-ID')}</td>`;
+    html += `<td style="border: 1px solid #000; background-color: #C6EFCE; font-weight: bold;">${dayTotal.a_r4.toLocaleString('id-ID')}</td>`;
+    html += `<td style="border: 1px solid #000; background-color: #C6EFCE; font-weight: bold;">${dayTotal.a_r6.toLocaleString('id-ID')}</td>`;
+    html += `<td style="border: 1px solid #000; background-color: #C6EFCE; font-weight: bold;">${dayTotal.a_tot.toLocaleString('id-ID')}</td>`;
     html += '</tr>';
 
     grandTotal.p_r2 += dayTotal.p_r2; grandTotal.p_r4 += dayTotal.p_r4; grandTotal.p_r6 += dayTotal.p_r6; grandTotal.p_tot += dayTotal.p_tot;
     grandTotal.a_r2 += dayTotal.a_r2; grandTotal.a_r4 += dayTotal.a_r4; grandTotal.a_r6 += dayTotal.a_r6; grandTotal.a_tot += dayTotal.a_tot;
   }
 
-  html += \`
+  html += `
         </tbody>
         <tfoot>
           <tr>
             <td colspan="3" style="border: 1px solid #000; font-weight: bold; background-color: #E2EFDA; padding: 10px;">TOTAL PRODUKSI & PENDAPATAN UNIK</td>
-            <td style="border: 1px solid #000; font-weight: bold; background-color: #B4C6E7;">\${grandTotal.p_r2.toLocaleString('id-ID')}</td>
-            <td style="border: 1px solid #000; font-weight: bold; background-color: #B4C6E7;">\${grandTotal.p_r4.toLocaleString('id-ID')}</td>
-            <td style="border: 1px solid #000; font-weight: bold; background-color: #B4C6E7;">\${grandTotal.p_r6.toLocaleString('id-ID')}</td>
-            <td style="border: 1px solid #000; font-weight: bold; background-color: #B4C6E7;">\${grandTotal.p_tot.toLocaleString('id-ID')}</td>
+            <td style="border: 1px solid #000; font-weight: bold; background-color: #B4C6E7;">${grandTotal.p_r2.toLocaleString('id-ID')}</td>
+            <td style="border: 1px solid #000; font-weight: bold; background-color: #B4C6E7;">${grandTotal.p_r4.toLocaleString('id-ID')}</td>
+            <td style="border: 1px solid #000; font-weight: bold; background-color: #B4C6E7;">${grandTotal.p_r6.toLocaleString('id-ID')}</td>
+            <td style="border: 1px solid #000; font-weight: bold; background-color: #B4C6E7;">${grandTotal.p_tot.toLocaleString('id-ID')}</td>
 
-            <td style="border: 1px solid #000; font-weight: bold; background-color: #C6EFCE;">\${grandTotal.a_r2.toLocaleString('id-ID')}</td>
-            <td style="border: 1px solid #000; font-weight: bold; background-color: #C6EFCE;">\${grandTotal.a_r4.toLocaleString('id-ID')}</td>
-            <td style="border: 1px solid #000; font-weight: bold; background-color: #C6EFCE;">\${grandTotal.a_r6.toLocaleString('id-ID')}</td>
-            <td style="border: 1px solid #000; font-weight: bold; background-color: #C6EFCE;">\${grandTotal.a_tot.toLocaleString('id-ID')}</td>
+            <td style="border: 1px solid #000; font-weight: bold; background-color: #C6EFCE;">${grandTotal.a_r2.toLocaleString('id-ID')}</td>
+            <td style="border: 1px solid #000; font-weight: bold; background-color: #C6EFCE;">${grandTotal.a_r4.toLocaleString('id-ID')}</td>
+            <td style="border: 1px solid #000; font-weight: bold; background-color: #C6EFCE;">${grandTotal.a_r6.toLocaleString('id-ID')}</td>
+            <td style="border: 1px solid #000; font-weight: bold; background-color: #C6EFCE;">${grandTotal.a_tot.toLocaleString('id-ID')}</td>
           </tr>
         </tfoot>
       </table>
     </div>
-  \`;
+  `;
   return html;
 }
 
@@ -1251,7 +1251,7 @@ async function onDownload(type = 'excel') {
   const endDay = parseInt(document.getElementById('dlEndDay').value) || 31;
   if (startDay > endDay) { alert('Rentang tanggal tidak valid.'); return; }
   
-  const filename = \`UNIK \${data.monthName} \${data.year} Tgl \${startDay}-\${endDay}\`;
+  const filename = `UNIK ${data.monthName} ${data.year} Tgl ${startDay}-${endDay}`;
 
   if (type === 'pdf') {
     const btn = document.getElementById('btnDownloadPdf');
