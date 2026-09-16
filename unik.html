@@ -371,9 +371,10 @@ const COL_BNI_QTY  = 51, COL_BNI_AMT  = 52;
 const BANKS = [
   { key: 'cash',    label: 'TUNAI / CASH',    chipClass: 'chip-cash',    qtyCol: COL_CASH_QTY, amtCol: COL_CASH_AMT },
   { key: 'bri',     label: 'BRI BRIZZI',      chipClass: 'chip-bri',     qtyCol: COL_BRI_QTY,  amtCol: COL_BRI_AMT  },
-  { key: 'mandiri', label: 'MANDIRI E-MONEY',  chipClass: 'chip-mandiri', qtyCol: COL_MAND_QTY, amtCol: COL_MAND_AMT },
-  { key: 'bca',     label: 'BCA FLAZZ',        chipClass: 'chip-bca',     qtyCol: COL_BCA_QTY,  amtCol: COL_BCA_AMT  },
-  { key: 'bni',     label: 'BNI TAPCASH',      chipClass: 'chip-bni',     qtyCol: COL_BNI_QTY,  amtCol: COL_BNI_AMT  },
+  { key: 'mandiri', label: 'MANDIRI E-MONEY', chipClass: 'chip-mandiri', qtyCol: COL_MAND_QTY, amtCol: COL_MAND_AMT },
+  { key: 'bca',     label: 'BCA FLAZZ',       chipClass: 'chip-bca',     qtyCol: COL_BCA_QTY,  amtCol: COL_BCA_AMT  },
+  { key: 'bni',     label: 'BNI TAPCASH',     chipClass: 'chip-bni',     qtyCol: COL_BNI_QTY,  amtCol: COL_BNI_AMT  },
+  { key: 'qris',    label: 'QRIS',            chipClass: 'chip-bni',     qtyCol: -1,           amtCol: -1           },
 ];
 
 const GROUPS = [
@@ -545,7 +546,7 @@ function parseUnikData(ws) {
   };
 
   // 1. DYNAMICALLY DETECT COLUMNS FOR PAYMENT METHODS
-  const bankCols = { cash: null, bri: null, mandiri: null, bca: null, bni: null };
+  const bankCols = { cash: null, bri: null, mandiri: null, bca: null, bni: null, qris: null };
   let headerRowIdx = -1;
   
   // Scan first 20 rows to find the bank headers (they are usually around row 8 or 9)
@@ -554,7 +555,7 @@ function parseUnikData(ws) {
     // Scan columns 30 to 60 where payment methods usually reside
     for (let c = 30; c <= 60; c++) {
       const val = getStr(r, c);
-      if (val.includes('MANDIRI') || val.includes('BRIZZI') || val.includes('FLAZZ') || val.includes('TAPCASH') || val === 'TUNAI / CASH') {
+      if (val.includes('MANDIRI') || val.includes('BRIZZI') || val.includes('FLAZZ') || val.includes('TAPCASH') || val === 'TUNAI / CASH' || val.includes('QRIS')) {
         headerRowIdx = r;
         foundBank = true;
         break;
@@ -574,6 +575,7 @@ function parseUnikData(ws) {
       else if (val.includes('MANDIRI')) bankKey = 'mandiri';
       else if (val.includes('BCA') || val.includes('FLAZZ')) bankKey = 'bca';
       else if (val.includes('TUNAI') || val.includes('CASH')) bankKey = 'cash';
+      else if (val.includes('QRIS')) bankKey = 'qris';
 
       if (bankKey) {
         // Find Qty and Amount in the row immediately below this one
@@ -747,6 +749,7 @@ function updateMonthSelector() {
     selectedMonthKey = unique[0];
     sel.value = unique[0];
   }
+  document.getElementById('btnDownload').disabled = (unique.length === 0);
 }
 
 // ===== DAY GRID =====
@@ -781,7 +784,6 @@ function renderDayGrid() {
   }
   document.getElementById('statsCount').textContent = `${filledCount} / ${daysInMonth}`;
   document.getElementById('progressFill').style.width = `${(filledCount/daysInMonth)*100}%`;
-  document.getElementById('btnDownload').disabled = filledCount === 0;
 }
 
 function showDayDetail(day, dayData) {
@@ -879,64 +881,44 @@ function numToCol(n) {
 
 async function generateUnikWorkbook(monthData) {
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('Pendapatan Non Tunai Perbank');
+  const ws = wb.addWorksheet('LAMPIRAN');
   const { year, month, monthName } = monthData;
   const daysInMonth = getDaysInMonth(year, month);
 
-  // ---- STYLES ----
-  const fontTitle  = { name: 'Arial', size: 11, bold: true };
-  const fontHeader = { name: 'Arial', size: 10, bold: true };
-  const fontData   = { name: 'Arial', size: 10 };
-  const fontTotal  = { name: 'Arial', size: 10, bold: true };
-  const fontTotalBig = { name: 'Arial', size: 11, bold: true };
+  // ---- STYLES (matching Dakung Nodin template) ----
+  const fontBase   = { name: 'Aptos Narrow', size: 11 };
+  const fontBold   = { ...fontBase, bold: true };
+  const fontTitle  = { ...fontBase, bold: true };
   const borderThin = { top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'} };
-  const borderMed  = { top:{style:'medium'}, left:{style:'medium'}, bottom:{style:'medium'}, right:{style:'medium'} };
-  const alignCtr   = { horizontal:'center', vertical:'middle', wrapText: true };
-
+  const borderLR   = { left:{style:'thin'}, right:{style:'thin'} };
+  const borderBLR  = { bottom:{style:'thin'}, left:{style:'thin'}, right:{style:'thin'} };
+  const borderTLR  = { top:{style:'thin'}, left:{style:'thin'}, right:{style:'thin'} };
+  const alignCtr   = { horizontal: 'center', vertical: 'middle', wrapText: true };
+  const alignRight = { horizontal: 'right', vertical: 'middle' };
+  const alignLeft  = { horizontal: 'left', vertical: 'middle', wrapText: true };
 
   const fillFor    = argb => ({ type:'pattern', pattern:'solid', fgColor:{ argb } });
-  const fillSilver = fillFor('FFD6DCE4');
-  const fillBlue   = fillFor('FFD9E1F2');
-  const fillYellow = fillFor('FFFFF2CC');
-  const fillGreen  = fillFor('FFE2EFDA');
-  const fillOrange = fillFor('FFFCE4D6');
-  const fillDkBlue = fillFor('FF2F75B6');
-  const fillLtBlue = fillFor('FFBDD7EE');
-  const fillSum    = fillFor('FFE8EDF5'); // slightly darker/blue-ish for the merged sum row
+  // Approximated theme colors: theme 5 tint 0.4 ≈ light blue, theme 9 tint 0.6 ≈ light green
+  const fillProd   = fillFor('FFB4C6E7'); // Produksi columns (D-G) - blue-ish
+  const fillPend   = fillFor('FFC6EFCE'); // Pendapatan columns (H-K) - green-ish
+  const fillHeader = fillFor('FFD6DCE4'); // Header background
+  const fillTitle  = fillFor('FF4472C4'); // Title bar (blue)
+  const fillGrand  = fillFor('FFE2EFDA'); // Grand total row
 
-  const bankDefs = [
-    { key: 'cash',    label: 'TUNAI / CASH',   fill: fillSilver },
-    { key: 'bri',     label: 'BRI BRIZZI',     fill: fillBlue   },
-    { key: 'mandiri', label: 'MANDIRI E-MONEY', fill: fillYellow },
-    { key: 'bca',     label: 'BCA FLAZZ',      fill: fillGreen  },
-    { key: 'bni',     label: 'BNI TAPCASH',    fill: fillOrange },
+  // Bank definitions in order matching the template
+  const bankOrder = [
+    { key: 'mandiri', label: 'MANDIRI (E-MONEY)' },
+    { key: 'bni',     label: 'BNI (TAPCASH)' },
+    { key: 'bri',     label: 'BRI (BRIZZI)' },
+    { key: 'bca',     label: 'BCA (FLAZZ)' },
+    { key: 'qris',    label: 'QRIS' },
+    { key: 'cash',    label: 'TUNAI / CASH' },
   ];
 
-  // COLUMN LAYOUT: 5 banks x 3 cols (R2, R4, R6) = 15 cols per side
-  // PRODUKSI: B-P  |  TOTAL PROD: Q  |  PENDAPATAN: R-AF  |  TOTAL PEND: AG
-  // SUB TOTAL PROD: AH  |  SUB TOTAL PEND: AI
-  const CPB        = 3;
-  const PROD_START = 2; // B
-  const PROD_END   = PROD_START + bankDefs.length * CPB - 1; // P (16)
-  const TOTAL_PROD = PROD_END + 1; // Q (17)
-  const PEND_START = TOTAL_PROD + 1; // R (18)
-  const PEND_END   = PEND_START + bankDefs.length * CPB - 1; // AF (32)
-  const TOTAL_PEND = PEND_END + 1; // AG (33)
-  const SUB_PROD   = TOTAL_PEND + 1; // AH (34)
-  const SUB_PEND   = TOTAL_PEND + 2; // AI (35)
-  const LAST_COL   = SUB_PEND; // AI (35)
-
+  const BLOCK_SIZE = 11; // 11 rows per day block
   const colL = numToCol;
 
-  const prodBankCols = bankDefs.map((b, bi) => {
-    const base = PROD_START + bi * CPB;
-    return { r2: base, r4: base+1, r6: base+2, fill: b.fill };
-  });
-  const pendBankCols = bankDefs.map((b, bi) => {
-    const base = PEND_START + bi * CPB;
-    return { r2: base, r4: base+1, r6: base+2, fill: b.fill };
-  });
-
+  // Helper to set cell
   function AC(row, col, val, font, fill, border, align, numFmt) {
     const c = ws.getCell(row, col);
     if (val !== undefined) c.value = val;
@@ -948,228 +930,160 @@ async function generateUnikWorkbook(monthData) {
     return c;
   }
 
-  // ---- ROWS 1-3: TITLE ----
-  const lastL = colL(LAST_COL);
-  ws.mergeCells(`A1:${lastL}1`);
-  AC(1,1,'REKONSILIASI DATA PRODUKSI & PENDAPATAN PENGELOLAAN PARKIR KENDARAAN GLOBAL NON TUNAI (UNIK)',
-    {...fontTitle,size:12,color:{argb:'FFFFFFFF'}}, fillDkBlue, null, alignCtr);
+  // ---- COLUMN WIDTHS ----
+  ws.columns = [
+    { width: 8.71 },   // A - NO
+    { width: 18.43 },  // B - Tanggal
+    { width: 21.14 },  // C - Bank
+    { width: 10 },     // D - R2 Prod
+    { width: 10 },     // E - R4 Prod
+    { width: 10 },     // F - R6 Prod
+    { width: 10 },     // G - Total Produksi
+    { width: 15 },     // H - R2 Pend
+    { width: 15 },     // I - R4 Pend
+    { width: 15 },     // J - R6 Pend
+    { width: 15 },     // K - Total Pendapatan
+  ];
 
-  ws.mergeCells(`A2:${lastL}2`);
-  AC(2,1,'BANDARA INTERNASIONAL SYAMSUDIN NOOR BANJARMASIN', fontTitle, fillLtBlue, null, alignCtr);
+  // Collect total row numbers for grand total formula
+  const totalRowNumbers = [];
 
-  ws.mergeCells(`A3:${lastL}3`);
-  AC(3,1,`${monthName.toUpperCase()} ${year}`, fontTitle, fillLtBlue, null, alignCtr);
-
-  // ---- ROW 4: Category Big Labels ----
-  ws.mergeCells(4,1,6,1);
-  AC(4,1,'TGL', fontHeader, fillSilver, borderThin, alignCtr);
-
-  ws.mergeCells(4, PROD_START, 4, PROD_END);
-  AC(4, PROD_START, 'PRODUKSI', fontHeader, fillDkBlue, borderThin, alignCtr);
-  ws.getCell(4, PROD_START).font = {...fontHeader, size:11, color:{argb:'FFFFFFFF'}};
-
-  ws.mergeCells(4, TOTAL_PROD, 6, TOTAL_PROD);
-  AC(4, TOTAL_PROD, `TOTAL
-PRODUKSI`, fontHeader, fillSilver, borderThin, alignCtr);
-
-  ws.mergeCells(4, PEND_START, 4, PEND_END);
-  AC(4, PEND_START, 'PENDAPATAN', fontHeader, fillDkBlue, borderThin, alignCtr);
-  ws.getCell(4, PEND_START).font = {...fontHeader, size:11, color:{argb:'FFFFFFFF'}};
-
-  ws.mergeCells(4, TOTAL_PEND, 6, TOTAL_PEND);
-  AC(4, TOTAL_PEND, `TOTAL
-PENDAPATAN`, fontHeader, fillSilver, borderThin, alignCtr);
-
-  ws.mergeCells(4, SUB_PROD, 6, SUB_PROD);
-  AC(4, SUB_PROD, `SUB TOTAL
-PRODUKSI
-(3 hari)`, fontHeader, fillDkBlue, borderMed, alignCtr);
-  ws.getCell(4, SUB_PROD).font = {...fontHeader, color:{argb:'FFFFFFFF'}};
-
-  ws.mergeCells(4, SUB_PEND, 6, SUB_PEND);
-  AC(4, SUB_PEND, `SUB TOTAL
-PENDAPATAN
-(3 hari)`, fontHeader, fillDkBlue, borderMed, alignCtr);
-  ws.getCell(4, SUB_PEND).font = {...fontHeader, color:{argb:'FFFFFFFF'}};
-
-  // ---- ROW 5: Bank names (3-col span each) ----
-  bankDefs.forEach((bank, bi) => {
-    const pp = prodBankCols[bi];
-    ws.mergeCells(5, pp.r2, 5, pp.r6);
-    AC(5, pp.r2, bank.label, fontHeader, bank.fill, borderThin, alignCtr);
-    const pd = pendBankCols[bi];
-    ws.mergeCells(5, pd.r2, 5, pd.r6);
-    AC(5, pd.r2, bank.label, fontHeader, bank.fill, borderThin, alignCtr);
-  });
-
-  // ---- ROW 6: Roda 2 | Roda 4 | Roda 6 ----
-  bankDefs.forEach((bank, bi) => {
-    const pp = prodBankCols[bi];
-    const pd = pendBankCols[bi];
-    AC(6, pp.r2, 'Roda 2', fontHeader, bank.fill, borderThin, alignCtr);
-    AC(6, pp.r4, 'Roda 4', fontHeader, bank.fill, borderThin, alignCtr);
-    AC(6, pp.r6, 'Roda 6', fontHeader, bank.fill, borderThin, alignCtr);
-    AC(6, pd.r2, 'Roda 2', fontHeader, bank.fill, borderThin, alignCtr);
-    AC(6, pd.r4, 'Roda 4', fontHeader, bank.fill, borderThin, alignCtr);
-    AC(6, pd.r6, 'Roda 6', fontHeader, bank.fill, borderThin, alignCtr);
-  });
-
-  // ---- DATA ROWS ----
-  const DSR = 7; // dataStartRow
-
+  // ---- GENERATE DAY BLOCKS ----
   for (let d = 1; d <= daysInMonth; d++) {
-    const R  = DSR + d - 1;
+    const baseRow = (d - 1) * BLOCK_SIZE + 1;
     const dd = monthData.days[String(d)];
 
-    // Date
-    const dc = ws.getCell(R, 1);
-    dc.value = new Date(Date.UTC(year, month-1, d, 12, 0, 0));
-    dc.numFmt = 'dd/mm/yyyy';
-    dc.font = fontData; dc.alignment = alignCtr;
-    dc.border = borderThin; dc.fill = fillSilver;
+    // === ROW 1 of block: Title row ===
+    const r1 = baseRow;
+    AC(r1, 1, 'LAPORAN PENDAPATAN UNIK TANGGAL', fontBold, null, null, null);
+    // H:I merged for the date
+    ws.mergeCells(r1, 8, r1, 9);
+    if (d === 1) {
+      AC(r1, 8, new Date(Date.UTC(year, month-1, d, 12, 0, 0)), fontBold, null, null, alignCtr, 'd-mmm-yy');
+    } else {
+      // Reference previous day's date + 1
+      const prevH = (d - 2) * BLOCK_SIZE + 1;
+      AC(r1, 8, {formula: `H${prevH}+1`}, fontBold, null, null, alignCtr, 'd-mmm-yy');
+    }
 
-    // PRODUKSI: R2, R4, R6
-    bankDefs.forEach((bank, bi) => {
-      const pp = prodBankCols[bi];
-      const v2 = dd ? (dd[`${bank.key}_r2_qty`] || 0) : 0;
-      const v4 = dd ? (dd[`${bank.key}_r4_qty`] || 0) : 0;
-      const v6 = dd ? (dd[`${bank.key}_r6_qty`] || 0) : 0;
-      AC(R, pp.r2, v2, fontData, bank.fill, borderThin, alignCtr);
-      AC(R, pp.r4, v4, fontData, bank.fill, borderThin, alignCtr);
-      AC(R, pp.r6, v6, fontData, bank.fill, borderThin, alignCtr);
+    // === ROW 2 of block: Sub-headers (merged spans) ===
+    const r2 = baseRow + 1;
+    ws.mergeCells(r2, 1, r2 + 2, 1); // A merged 3 rows
+    AC(r2, 1, 'NO', fontBold, fillHeader, borderThin, alignCtr);
+    ws.mergeCells(r2, 2, r2 + 2, 2); // B merged 3 rows
+    AC(r2, 2, 'LAPORAN TRANSAKSI UNIK', fontBold, fillHeader, borderThin, alignCtr);
+    ws.mergeCells(r2, 3, r2 + 2, 3); // C merged 3 rows
+    AC(r2, 3, 'UNIK BY BANK', fontBold, fillHeader, borderThin, alignCtr);
+    ws.mergeCells(r2, 4, r2, 11); // D:K merged
+    AC(r2, 4, 'LAPORAN TRANSAKSI UNIK HARIAN', fontBold, fillHeader, borderThin, alignCtr);
+
+    // === ROW 3 of block: PRODUKSI / PENDAPATAN headers ===
+    const r3 = baseRow + 2;
+    ws.mergeCells(r3, 4, r3, 6); // D:F merged = PRODUKSI
+    AC(r3, 4, 'PRODUKSI', fontBold, fillProd, borderThin, alignCtr);
+    ws.mergeCells(r3, 7, r3 + 1, 7); // G merged 2 rows = TOTAL PRODUKSI
+    AC(r3, 7, 'TOTAL PRODUKSI', fontBold, fillProd, borderThin, alignCtr);
+    ws.mergeCells(r3, 8, r3, 10); // H:J merged = PENDAPATAN
+    AC(r3, 8, 'PENDAPATAN', fontBold, fillPend, borderThin, alignCtr);
+    ws.mergeCells(r3, 11, r3 + 1, 11); // K merged 2 rows = TOTAL PENDAPATAN
+    AC(r3, 11, 'TOTAL PENDAPATAN', fontBold, fillPend, borderThin, alignCtr);
+
+    // === ROW 4 of block: R2 / R4 / R6 sub-headers ===
+    const r4 = baseRow + 3;
+    AC(r4, 4, 'R2', fontBold, fillProd, borderThin, alignCtr);
+    AC(r4, 5, 'R4', fontBold, fillProd, borderThin, alignCtr);
+    AC(r4, 6, 'R6', fontBold, fillProd, borderThin, alignCtr);
+    AC(r4, 8, 'R2', fontBold, fillPend, borderThin, alignCtr);
+    AC(r4, 9, 'R4', fontBold, fillPend, borderThin, alignCtr);
+    AC(r4, 10, 'R6', fontBold, fillPend, borderThin, alignCtr);
+
+    // === ROWS 5-10 of block: Bank data rows ===
+    const dataStartRow = baseRow + 4;
+    const dataEndRow = baseRow + 9;
+
+    // Merge A for day number (rows 5-11)
+    ws.mergeCells(dataStartRow, 1, dataEndRow + 1, 1);
+    AC(dataStartRow, 1, d, fontBase, null, borderThin, alignCtr);
+
+    // Merge B for date (rows 5-11)
+    ws.mergeCells(dataStartRow, 2, dataEndRow + 1, 2);
+    if (d === 1) {
+      AC(dataStartRow, 2, new Date(Date.UTC(year, month-1, d, 12, 0, 0)), fontBase, null, borderThin, alignCtr, 'd-mmm-yy');
+    } else {
+      const prevDataStart = (d - 2) * BLOCK_SIZE + 5;
+      AC(dataStartRow, 2, {formula: `B${prevDataStart}+1`}, fontBase, null, borderThin, alignCtr, 'd-mmm-yy');
+    }
+
+    bankOrder.forEach((bank, bi) => {
+      const row = dataStartRow + bi;
+
+      // C = Bank name
+      AC(row, 3, bank.label, fontBold, null, borderTLR, alignCtr);
+
+      // Produksi: D=R2, E=R4, F=R6
+      const pR2 = dd ? (dd[`${bank.key}_r2_qty`] || 0) : 0;
+      const pR4 = dd ? (dd[`${bank.key}_r4_qty`] || 0) : 0;
+      const pR6 = dd ? (dd[`${bank.key}_r6_qty`] || 0) : 0;
+      AC(row, 4, pR2, fontBase, fillProd, borderThin, alignCtr, '#,##0');
+      AC(row, 5, pR4, fontBase, fillProd, borderThin, alignCtr, '#,##0');
+      AC(row, 6, pR6, fontBase, fillProd, borderThin, alignCtr, '#,##0');
+
+      // G = Total Produksi (formula)
+      AC(row, 7, {formula: `D${row}+E${row}+F${row}`}, fontBold, fillProd, borderThin, alignCtr, '#,##0');
+
+      // Pendapatan: H=R2, I=R4, J=R6
+      const aR2 = dd ? (dd[`${bank.key}_r2_amt`] || 0) : 0;
+      const aR4 = dd ? (dd[`${bank.key}_r4_amt`] || 0) : 0;
+      const aR6 = dd ? (dd[`${bank.key}_r6_amt`] || 0) : 0;
+      AC(row, 8, aR2, fontBase, fillPend, borderThin, alignCtr, '#,##0');
+      AC(row, 9, aR4, fontBase, fillPend, borderThin, alignCtr, '#,##0');
+      AC(row, 10, aR6, fontBase, fillPend, borderThin, alignCtr, '#,##0');
+
+      // K = Total Pendapatan (formula)
+      AC(row, 11, {formula: `H${row}+I${row}+J${row}`}, fontBold, fillPend, borderThin, alignCtr, '#,##0');
     });
 
-    // TOTAL PRODUKSI = sum of all prod columns
-    const tpC = ws.getCell(R, TOTAL_PROD);
-    tpC.value = {formula: `SUM(${colL(PROD_START)}${R}:${colL(PROD_END)}${R})`};
-    tpC.font = fontTotal; tpC.alignment = alignCtr; tpC.border = borderThin; tpC.fill = fillSilver;
+    // === ROW 11 of block: TOTAL row ===
+    const totalR = baseRow + 10;
+    totalRowNumbers.push(totalR);
 
-    // PENDAPATAN: R2, R4, R6
-    bankDefs.forEach((bank, bi) => {
-      const pd = pendBankCols[bi];
-      const v2 = dd ? (dd[`${bank.key}_r2_amt`] || 0) : 0;
-      const v4 = dd ? (dd[`${bank.key}_r4_amt`] || 0) : 0;
-      const v6 = dd ? (dd[`${bank.key}_r6_amt`] || 0) : 0;
-      AC(R, pd.r2, v2, fontData, bank.fill, borderThin, alignCtr, '#,##0');
-      AC(R, pd.r4, v4, fontData, bank.fill, borderThin, alignCtr, '#,##0');
-      AC(R, pd.r6, v6, fontData, bank.fill, borderThin, alignCtr, '#,##0');
-    });
+    // A and B are already merged above
+    AC(totalR, 3, 'TOTAL', fontBold, null, borderThin, alignCtr);
 
-    // TOTAL PENDAPATAN = sum of all pend columns
-    const tpendC = ws.getCell(R, TOTAL_PEND);
-    tpendC.value = {formula: `SUM(${colL(PEND_START)}${R}:${colL(PEND_END)}${R})`};
-    tpendC.numFmt = '#,##0'; tpendC.font = fontTotal; tpendC.alignment = alignCtr;
-    tpendC.border = borderThin; tpendC.fill = fillSilver;
+    // SUM formulas for each column D-K
+    for (let col = 4; col <= 6; col++) {
+      AC(totalR, col, {formula: `SUM(${colL(col)}${dataStartRow}:${colL(col)}${dataEndRow})`},
+        fontBold, fillProd, borderThin, alignCtr, '#,##0');
+    }
+    AC(totalR, 7, {formula: `SUM(G${dataStartRow}:G${dataEndRow})`},
+      fontBold, fillProd, borderThin, alignCtr, '#,##0');
+    for (let col = 8; col <= 10; col++) {
+      AC(totalR, col, {formula: `SUM(${colL(col)}${dataStartRow}:${colL(col)}${dataEndRow})`},
+        fontBold, fillPend, borderThin, alignCtr, '#,##0');
+    }
+    AC(totalR, 11, {formula: `SUM(K${dataStartRow}:K${dataEndRow})`},
+      fontBold, fillPend, borderThin, alignCtr, '#,##0');
 
-    // SUB-TOTAL per 3 hari
-    const tri = (d - 1) % 3;
-    if (tri === 0 || d === daysInMonth) {
-      const rowEnd = Math.min(R + (2 - tri), DSR + daysInMonth - 1);
-
-      if (rowEnd > R) ws.mergeCells(R, SUB_PROD, rowEnd, SUB_PROD);
-      const spC = ws.getCell(R, SUB_PROD);
-      spC.value = {formula: R===rowEnd ? `${colL(TOTAL_PROD)}${R}` : `SUM(${colL(TOTAL_PROD)}${R}:${colL(TOTAL_PROD)}${rowEnd})`};
-      spC.font = {...fontTotal,color:{argb:'FFFFFFFF'}}; spC.alignment = alignCtr;
-      spC.border = borderMed; spC.fill = fillDkBlue; spC.numFmt = '#,##0';
-
-      if (rowEnd > R) ws.mergeCells(R, SUB_PEND, rowEnd, SUB_PEND);
-      const spendC = ws.getCell(R, SUB_PEND);
-      spendC.value = {formula: R===rowEnd ? `${colL(TOTAL_PEND)}${R}` : `SUM(${colL(TOTAL_PEND)}${R}:${colL(TOTAL_PEND)}${rowEnd})`};
-      spendC.font = {...fontTotal,color:{argb:'FFFFFFFF'}}; spendC.alignment = alignCtr;
-      spendC.border = borderMed; spendC.fill = fillDkBlue; spendC.numFmt = '#,##0';
+    // === ROW HEIGHTS for data rows ===
+    ws.getRow(r2).height = 14.45;
+    ws.getRow(r3).height = 30;
+    for (let i = dataStartRow; i <= totalR; i++) {
+      ws.getRow(i).height = 42;
     }
   }
 
-  // ---- TOTAL ROW (Column-wise sums) ----
-  const totalRow = DSR + daysInMonth;
-  AC(totalRow, 1, 'TOTAL', fontTotal, fillSilver, borderThin, alignCtr);
+  // ---- GRAND TOTAL ROW ----
+  const grandRow = daysInMonth * BLOCK_SIZE + 1;
+  ws.mergeCells(grandRow, 1, grandRow, 3);
+  AC(grandRow, 1, 'TOTAL PRODUKSI & PENDAPATAN UNIK', fontBold, fillGrand, borderThin, alignCtr);
+  ws.getRow(grandRow).height = 54.6;
 
-  const sumCols = [];
-  bankDefs.forEach((_, bi) => {
-    const pp = prodBankCols[bi];
-    sumCols.push({col:pp.r2, fill:bankDefs[bi].fill, isAmt:false});
-    sumCols.push({col:pp.r4, fill:bankDefs[bi].fill, isAmt:false});
-    sumCols.push({col:pp.r6, fill:bankDefs[bi].fill, isAmt:false});
-  });
-  sumCols.push({col:TOTAL_PROD, fill:fillSilver, isAmt:false});
-  bankDefs.forEach((_, bi) => {
-    const pd = pendBankCols[bi];
-    sumCols.push({col:pd.r2, fill:bankDefs[bi].fill, isAmt:true});
-    sumCols.push({col:pd.r4, fill:bankDefs[bi].fill, isAmt:true});
-    sumCols.push({col:pd.r6, fill:bankDefs[bi].fill, isAmt:true});
-  });
-  sumCols.push({col:TOTAL_PEND, fill:fillSilver, isAmt:true });
-  sumCols.push({col:SUB_PROD,   fill:fillDkBlue, isAmt:false});
-  sumCols.push({col:SUB_PEND,   fill:fillDkBlue, isAmt:true });
-
-  sumCols.forEach(({col, fill, isAmt}) => {
-    const c = ws.getCell(totalRow, col);
-    c.value = {formula:`SUM(${colL(col)}${DSR}:${colL(col)}${totalRow-1})`};
-    const isDk = fill === fillDkBlue;
-    c.font = isDk ? {...fontTotal,color:{argb:'FFFFFFFF'}} : fontTotal;
-    c.alignment = alignCtr; c.border = borderThin; c.fill = fill;
-    if (isAmt) c.numFmt = '#,##0';
-  });
-
-  // ---- MERGED TOTAL ROW (R2+R4+R6 per bank, below TOTAL) ----
-  const grandRow = totalRow + 1;
-  // Make the A column cell empty but styled
-  AC(grandRow, 1, '', fontTotal, fillSum, borderThin, alignCtr);
-
-  bankDefs.forEach((_, bi) => {
-    const pp = prodBankCols[bi];
-    const pd = pendBankCols[bi];
-    
-    // PRODUKSI side merged total
-    ws.mergeCells(grandRow, pp.r2, grandRow, pp.r6);
-    const tcProd = ws.getCell(grandRow, pp.r2);
-    tcProd.value = {formula:`${colL(pp.r2)}${totalRow}+${colL(pp.r4)}${totalRow}+${colL(pp.r6)}${totalRow}`};
-    tcProd.font = fontTotalBig; tcProd.alignment = alignCtr; 
-    tcProd.border = borderThin; tcProd.fill = fillSum; tcProd.numFmt = '#,##0';
-    
-    // PENDAPATAN side merged total
-    ws.mergeCells(grandRow, pd.r2, grandRow, pd.r6);
-    const tcPend = ws.getCell(grandRow, pd.r2);
-    tcPend.value = {formula:`${colL(pd.r2)}${totalRow}+${colL(pd.r4)}${totalRow}+${colL(pd.r6)}${totalRow}`};
-    tcPend.font = fontTotalBig; tcPend.alignment = alignCtr; 
-    tcPend.border = borderThin; tcPend.fill = fillSum; tcPend.numFmt = '#,##0';
-  });
-  
-  // Total of Totals
-  const tProdC = ws.getCell(grandRow, TOTAL_PROD);
-  tProdC.value = {formula:`${colL(TOTAL_PROD)}${totalRow}`};
-  tProdC.font = fontTotalBig; tProdC.alignment = alignCtr; tProdC.border = borderThin; tProdC.fill = fillSilver;
-  
-  const tPendC = ws.getCell(grandRow, TOTAL_PEND);
-  tPendC.value = {formula:`${colL(TOTAL_PEND)}${totalRow}`};
-  tPendC.font = fontTotalBig; tPendC.alignment = alignCtr; tPendC.border = borderThin; tPendC.fill = fillSilver; tPendC.numFmt = '#,##0';
-
-  // Make sub totals look clean
-  AC(grandRow, SUB_PROD, '', fontTotal, fillDkBlue, borderMed, alignCtr);
-  AC(grandRow, SUB_PEND, '', fontTotal, fillDkBlue, borderMed, alignCtr);
-
-
-  // ---- COLUMN WIDTHS ----
-  const colWidths = [{width:11}]; // A TGL
-  bankDefs.forEach(() => {
-    colWidths.push({width:8},{width:8},{width:8}); // R2 R4 R6 (prod)
-  });
-  colWidths.push({width:11}); // TOTAL PROD
-  bankDefs.forEach(() => {
-    colWidths.push({width:11},{width:11},{width:11}); // R2 R4 R6 (pend)
-  });
-  colWidths.push({width:14}); // TOTAL PEND
-  colWidths.push({width:13},{width:15}); // SUB PROD, SUB PEND
-  ws.columns = colWidths;
-
-  // ---- ROW HEIGHTS ----
-  ws.getRow(1).height = 32;
-  ws.getRow(2).height = 18;
-  ws.getRow(3).height = 18;
-  ws.getRow(4).height = 22;
-  ws.getRow(5).height = 20;
-  ws.getRow(6).height = 18;
-  ws.getRow(grandRow).height = 22; // Make the bottom merged row a bit taller
+  // Build SUM formula referencing all day TOTAL rows (e.g. =D10+D20+D30+...)
+  for (let col = 4; col <= 11; col++) {
+    const sumParts = totalRowNumbers.map(rn => `${colL(col)}${rn}`).join('+');
+    AC(grandRow, col, {formula: sumParts}, fontBold, col <= 7 ? fillProd : fillPend,
+      borderThin, alignCtr, '#,##0');
+  }
 
   return wb;
 }
