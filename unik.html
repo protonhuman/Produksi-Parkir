@@ -1263,6 +1263,19 @@ async function onDownload(type = 'excel') {
         ],
         body: body,
         theme: 'grid',
+        columnStyles: {
+          0: { cellWidth: 9 },
+          1: { cellWidth: 22 },
+          2: { cellWidth: 46 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 20 },
+          6: { cellWidth: 20 },
+          7: { cellWidth: 30 },
+          8: { cellWidth: 30 },
+          9: { cellWidth: 30 },
+          10: { cellWidth: 30 }
+        },
         styles: {
           font: 'helvetica',
           fontSize: 8,
