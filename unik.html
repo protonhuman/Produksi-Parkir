@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rekapitulasi UNIK — Syamsudin Noor</title>
-<meta name="description" content="Rekapitulasi Uang Elektronik (UNIK) Parkir Kendaraan — Bandara Internasional Syamsudin Noor Banjarbaru">
+<meta name="description" content="Rekapitulasi Uang Elektronik (UNIK) Parkir Kendaraan — Bandara Internasional Syamsudin Noor Banjarmasin">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
@@ -210,15 +210,15 @@
       <button class="theme-btn btn-light" onclick="setTheme('theme-light')" title="Light Clean" style="background:#f8fafc;border:2px solid #e2e8f0;width:26px;height:26px;border-radius:50%;cursor:pointer;"></button>
       <button class="theme-btn btn-cyber" onclick="setTheme('theme-cyber')" title="Cyberpunk" style="background:#050505;border:2px solid #f0f;width:26px;height:26px;border-radius:50%;cursor:pointer;"></button>
     </div>
-    <img src="logo.png" alt="Angkasa Pura Supports" class="logo-img" onerror="this.style.display='none'">
-    <div class="header-badge">PT Angkasa Pura Supports</div>
+    <img src="logo.png" alt="PT. Angkasa Pura Suport" class="logo-img" onerror="this.style.display='none'">
+    <div class="header-badge">PT. Angkasa Pura Suport</div>
     <nav class="nav-menu">
       <a href="/" class="nav-link">Produksi Parkir</a>
       <a href="/statistik" class="nav-link">Statistik Parkir</a>
       <a href="/unik" class="nav-link active">Rekapitulasi UNIK</a>
     </nav>
     <h1>Rekapitulasi <span>UNIK</span></h1>
-    <div class="subtitle">UANG ELEKTRONIK — BANDARA INTERNASIONAL SYAMSUDIN NOOR · BANJARBARU</div>
+    <div class="subtitle">UANG ELEKTRONIK — BANDARA INTERNASIONAL SYAMSUDIN NOOR · BANJARMASIN</div>
   </header>
 
   <!-- UPLOAD SECTION -->
@@ -1172,7 +1172,7 @@ async function onDownload(type = 'excel') {
       doc.setFont("Aptos Narrow", "bold");
       const title1 = "LAMPIRAN";
       const title2 = "REKAPITULASI PENDAPATAN PARKIR CASUAL UANG ELEKTRONIK (UNIK)";
-      const title3 = "KANTOR CABANG PT. ANGKASA PURA SUPPORTS (BANJARBARU)";
+      const title3 = "KANTOR CABANG PT. ANGKASA PURA SUPORT (BANJARMASIN)";
       const title4 = `BULAN ${data.monthName.toUpperCase()} ${data.year}`;
 
       const w = doc.internal.pageSize.width;
