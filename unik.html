@@ -1154,6 +1154,7 @@ async function onDownload(type = 'excel') {
         fetch('/fonts/AptosNarrow-Regular.ttf'),
         fetch('/fonts/AptosNarrow-Bold.ttf')
       ]);
+      if (!regRes.ok || !boldRes.ok) throw new Error("Gagal memuat font dari server. Pastikan deployment sudah selesai.");
       const regBuf = await regRes.arrayBuffer();
       const boldBuf = await boldRes.arrayBuffer();
 
