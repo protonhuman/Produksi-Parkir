@@ -1244,21 +1244,24 @@ async function onDownload(type = 'excel') {
         startY: 38,
         head: [
           [
-            { content: 'NO', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228] } },
-            { content: 'TANGGAL', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228] } },
-            { content: 'BANK', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228] } },
-            { content: 'PRODUKSI', colSpan: 4, styles: { halign: 'center', fillColor: [180, 198, 231] } },
-            { content: 'PENDAPATAN (RP)', colSpan: 4, styles: { halign: 'center', fillColor: [198, 239, 206] } }
+            { content: 'NO', rowSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228] } },
+            { content: 'LAPORAN\\nTRANSAKSI UNIK', rowSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228] } },
+            { content: 'UNIK BY BANK', rowSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228] } },
+            { content: 'LAPORAN TRANSAKSI UNIK HARIAN', colSpan: 8, styles: { halign: 'center', fillColor: [214, 220, 228] } }
+          ],
+          [
+            { content: 'PRODUKSI', colSpan: 3, styles: { halign: 'center', fillColor: [180, 198, 231] } },
+            { content: 'TOTAL\\nPRODUKSI', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231] } },
+            { content: 'PENDAPATAN', colSpan: 3, styles: { halign: 'center', fillColor: [198, 239, 206] } },
+            { content: 'TOTAL\\nPENDAPATAN', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206] } }
           ],
           [
             { content: 'R2', styles: { halign: 'center', fillColor: [180, 198, 231] } },
             { content: 'R4', styles: { halign: 'center', fillColor: [180, 198, 231] } },
             { content: 'R6', styles: { halign: 'center', fillColor: [180, 198, 231] } },
-            { content: 'TOTAL PRODUKSI', styles: { halign: 'center', fillColor: [180, 198, 231] } },
             { content: 'R2', styles: { halign: 'center', fillColor: [198, 239, 206] } },
             { content: 'R4', styles: { halign: 'center', fillColor: [198, 239, 206] } },
-            { content: 'R6', styles: { halign: 'center', fillColor: [198, 239, 206] } },
-            { content: 'TOTAL PENDAPATAN', styles: { halign: 'center', fillColor: [198, 239, 206] } }
+            { content: 'R6', styles: { halign: 'center', fillColor: [198, 239, 206] } }
           ]
         ],
         body: body,
