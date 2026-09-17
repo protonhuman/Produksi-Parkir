@@ -990,10 +990,15 @@ async function generateUnikWorkbook(monthData, startDay, endDay) {
 
     // === ROW 1 of block: Title row ===
     const r1 = baseRow;
-    AC(r1, 1, 'LAPORAN PENDAPATAN UNIK TANGGAL', fontBold, null, null, null);
-    // H:I merged for the date
-    ws.mergeCells(r1, 8, r1, 9);
-    AC(r1, 8, new Date(Date.UTC(year, month-1, d, 12, 0, 0)), fontBold, null, null, alignCtr, 'd-mmm-yy');
+    ws.mergeCells(r1, 1, r1, 7); // A to G
+    AC(r1, 1, 'LAPORAN PENDAPATAN UNIK TANGGAL', fontBold, null, borderThin, { horizontal: 'left', vertical: 'middle' });
+    ws.mergeCells(r1, 8, r1, 11); // H to K
+    AC(r1, 8, new Date(Date.UTC(year, month-1, d, 12, 0, 0)), fontBold, null, borderThin, alignCtr, 'd-mmm-yy');
+    
+    // Ensure borders are applied to all cells in the merged ranges
+    for (let c = 1; c <= 11; c++) {
+      ws.getCell(r1, c).border = borderThin;
+    }
 
     // === ROW 2 of block: Sub-headers (merged spans) ===
     const r2 = baseRow + 1;
