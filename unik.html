@@ -932,8 +932,8 @@ async function generateUnikWorkbook(monthData, startDay, endDay) {
 
   const fillFor    = argb => ({ type:'pattern', pattern:'solid', fgColor:{ argb } });
   // Approximated theme colors: theme 5 tint 0.4 ≈ light blue, theme 9 tint 0.6 ≈ light green
-  const fillProd   = fillFor('FFB4C6E7'); // Produksi columns (D-G) - blue-ish
-  const fillPend   = fillFor('FFC6EFCE'); // Pendapatan columns (H-K) - green-ish
+  const fillProd   = fillFor('FFF1A983'); // Produksi columns (D-G) - orange
+  const fillPend   = fillFor('FFB5E6A2'); // Pendapatan columns (H-K) - green
   const fillHeader = fillFor('FFD6DCE4'); // Header background
   const fillTitle  = fillFor('FF4472C4'); // Title bar (blue)
   const fillGrand  = fillFor('FFE2EFDA'); // Grand total row
@@ -988,12 +988,13 @@ async function generateUnikWorkbook(monthData, startDay, endDay) {
     blockIdx++;
     const dd = monthData.days[String(d)];
 
+    const dateStrIndo = `${String(d).padStart(2, '0')} ${data.monthName.toUpperCase()} ${data.year}`;
     // === ROW 1 of block: Title row ===
     const r1 = baseRow;
-    ws.mergeCells(r1, 1, r1, 7); // A to G
+    ws.mergeCells(r1, 1, r1, 3); // A to C
     AC(r1, 1, 'LAPORAN PENDAPATAN UNIK TANGGAL', fontBold, null, borderThin, { horizontal: 'left', vertical: 'middle' });
-    ws.mergeCells(r1, 8, r1, 11); // H to K
-    AC(r1, 8, new Date(Date.UTC(year, month-1, d, 12, 0, 0)), fontBold, null, borderThin, alignCtr, 'd-mmm-yy');
+    ws.mergeCells(r1, 4, r1, 11); // D to K
+    AC(r1, 4, dateStrIndo, fontBold, null, borderThin, alignCtr, null);
     
     // Ensure borders are applied to all cells in the merged ranges
     for (let c = 1; c <= 11; c++) {
@@ -1197,14 +1198,12 @@ async function onDownload(type = 'excel') {
         const dd = data.days[String(d)] || null;
         let dayTotal = { p_r2: 0, p_r4: 0, p_r6: 0, p_tot: 0, a_r2: 0, a_r4: 0, a_r6: 0, a_tot: 0 };
 
-        const shortMonth = data.monthName.substring(0, 3);
-        const shortYear = String(data.year).slice(-2);
-        const dateStr = `${d}-${shortMonth}-${shortYear}`;
+        const dateStrIndo = `${String(d).padStart(2, '0')} ${data.monthName.toUpperCase()} ${data.year}`;
 
         // Header 1: Title
         body.push([
-          { content: 'LAPORAN PENDAPATAN UNIK TANGGAL', colSpan: 7, styles: { halign: 'left', valign: 'middle', fontStyle: 'bold', fillColor: [255, 255, 255] } },
-          { content: dateStr, colSpan: 4, styles: { halign: 'center', valign: 'middle', fontStyle: 'bold', fillColor: [255, 255, 255] } }
+          { content: 'LAPORAN PENDAPATAN UNIK TANGGAL', colSpan: 3, styles: { halign: 'left', valign: 'middle', fontStyle: 'bold', fillColor: [255, 255, 255] } },
+          { content: dateStrIndo, colSpan: 8, styles: { halign: 'center', valign: 'middle', fontStyle: 'bold', fillColor: [255, 255, 255] } }
         ]);
 
         // Header 2: Sub-headers row 1
@@ -1217,20 +1216,20 @@ async function onDownload(type = 'excel') {
 
         // Header 3: Sub-headers row 2
         body.push([
-          { content: 'PRODUKSI', colSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231], fontStyle: 'bold' } },
-          { content: 'TOTAL PRODUKSI', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231], fontStyle: 'bold' } },
-          { content: 'PENDAPATAN', colSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206], fontStyle: 'bold' } },
-          { content: 'TOTAL PENDAPATAN', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206], fontStyle: 'bold' } }
+          { content: 'PRODUKSI', colSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [241, 169, 131], fontStyle: 'bold' } },
+          { content: 'TOTAL PRODUKSI', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [241, 169, 131], fontStyle: 'bold' } },
+          { content: 'PENDAPATAN', colSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [181, 230, 162], fontStyle: 'bold' } },
+          { content: 'TOTAL PENDAPATAN', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [181, 230, 162], fontStyle: 'bold' } }
         ]);
 
         // Header 4: Sub-headers row 3
         body.push([
-          { content: 'R2', styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231], fontStyle: 'bold' } },
-          { content: 'R4', styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231], fontStyle: 'bold' } },
-          { content: 'R6', styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231], fontStyle: 'bold' } },
-          { content: 'R2', styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206], fontStyle: 'bold' } },
-          { content: 'R4', styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206], fontStyle: 'bold' } },
-          { content: 'R6', styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206], fontStyle: 'bold' } }
+          { content: 'R2', styles: { halign: 'center', valign: 'middle', fillColor: [241, 169, 131], fontStyle: 'bold' } },
+          { content: 'R4', styles: { halign: 'center', valign: 'middle', fillColor: [241, 169, 131], fontStyle: 'bold' } },
+          { content: 'R6', styles: { halign: 'center', valign: 'middle', fillColor: [241, 169, 131], fontStyle: 'bold' } },
+          { content: 'R2', styles: { halign: 'center', valign: 'middle', fillColor: [181, 230, 162], fontStyle: 'bold' } },
+          { content: 'R4', styles: { halign: 'center', valign: 'middle', fillColor: [181, 230, 162], fontStyle: 'bold' } },
+          { content: 'R6', styles: { halign: 'center', valign: 'middle', fillColor: [181, 230, 162], fontStyle: 'bold' } }
         ]);
 
         banks.forEach((bank, idx) => {
@@ -1251,21 +1250,21 @@ async function onDownload(type = 'excel') {
           const row = [];
           if (idx === 0) {
             row.push({ content: String(d), rowSpan: 7, styles: { halign: 'center', valign: 'middle' } });
-            row.push({ content: dateStr, rowSpan: 7, styles: { halign: 'center', valign: 'middle' } });
+            row.push({ content: dateStrIndo, rowSpan: 7, styles: { halign: 'center', valign: 'middle' } });
           }
           row.push({ content: bank.label, styles: { fontStyle: 'bold', halign: 'left' } });
 
-          // Produksi (4 columns) - blue
-          row.push({ content: pR2.toLocaleString('id-ID'), styles: { fillColor: [180, 198, 231], halign: 'center' } });
-          row.push({ content: pR4.toLocaleString('id-ID'), styles: { fillColor: [180, 198, 231], halign: 'center' } });
-          row.push({ content: pR6.toLocaleString('id-ID'), styles: { fillColor: [180, 198, 231], halign: 'center' } });
-          row.push({ content: pTot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center' } });
+          // Produksi (4 columns) - orange
+          row.push({ content: pR2.toLocaleString('id-ID'), styles: { fillColor: [241, 169, 131], halign: 'center' } });
+          row.push({ content: pR4.toLocaleString('id-ID'), styles: { fillColor: [241, 169, 131], halign: 'center' } });
+          row.push({ content: pR6.toLocaleString('id-ID'), styles: { fillColor: [241, 169, 131], halign: 'center' } });
+          row.push({ content: pTot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [241, 169, 131], halign: 'center' } });
 
           // Pendapatan (4 columns) - green
-          row.push({ content: aR2.toLocaleString('id-ID'), styles: { fillColor: [198, 239, 206], halign: 'center' } });
-          row.push({ content: aR4.toLocaleString('id-ID'), styles: { fillColor: [198, 239, 206], halign: 'center' } });
-          row.push({ content: aR6.toLocaleString('id-ID'), styles: { fillColor: [198, 239, 206], halign: 'center' } });
-          row.push({ content: aTot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center' } });
+          row.push({ content: aR2.toLocaleString('id-ID'), styles: { fillColor: [181, 230, 162], halign: 'center' } });
+          row.push({ content: aR4.toLocaleString('id-ID'), styles: { fillColor: [181, 230, 162], halign: 'center' } });
+          row.push({ content: aR6.toLocaleString('id-ID'), styles: { fillColor: [181, 230, 162], halign: 'center' } });
+          row.push({ content: aTot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [181, 230, 162], halign: 'center' } });
 
           body.push(row);
         });
@@ -1273,14 +1272,14 @@ async function onDownload(type = 'excel') {
         // Day Total Row
         body.push([
           { content: 'TOTAL', styles: { fontStyle: 'bold', halign: 'center' } },
-          { content: dayTotal.p_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center' } },
-          { content: dayTotal.p_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center' } },
-          { content: dayTotal.p_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center' } },
-          { content: dayTotal.p_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center' } },
-          { content: dayTotal.a_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center' } },
-          { content: dayTotal.a_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center' } },
-          { content: dayTotal.a_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center' } },
-          { content: dayTotal.a_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center' } }
+          { content: dayTotal.p_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [241, 169, 131], halign: 'center' } },
+          { content: dayTotal.p_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [241, 169, 131], halign: 'center' } },
+          { content: dayTotal.p_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [241, 169, 131], halign: 'center' } },
+          { content: dayTotal.p_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [241, 169, 131], halign: 'center' } },
+          { content: dayTotal.a_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [181, 230, 162], halign: 'center' } },
+          { content: dayTotal.a_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [181, 230, 162], halign: 'center' } },
+          { content: dayTotal.a_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [181, 230, 162], halign: 'center' } },
+          { content: dayTotal.a_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [181, 230, 162], halign: 'center' } }
         ]);
 
         grandTotal.p_r2 += dayTotal.p_r2; grandTotal.p_r4 += dayTotal.p_r4; grandTotal.p_r6 += dayTotal.p_r6; grandTotal.p_tot += dayTotal.p_tot;
@@ -1290,14 +1289,14 @@ async function onDownload(type = 'excel') {
       // Add Grand Total
       body.push([
         { content: 'TOTAL PRODUKSI & PENDAPATAN UNIK', colSpan: 3, styles: { fontStyle: 'bold', halign: 'center', fillColor: [226, 239, 218], fontSize: 10, minCellHeight: 10, valign: 'middle' } },
-        { content: grandTotal.p_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 10, valign: 'middle' } },
-        { content: grandTotal.p_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 10, valign: 'middle' } },
-        { content: grandTotal.p_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 10, valign: 'middle' } },
-        { content: grandTotal.p_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 10, valign: 'middle' } },
-        { content: grandTotal.a_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 10, valign: 'middle' } },
-        { content: grandTotal.a_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 10, valign: 'middle' } },
-        { content: grandTotal.a_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 10, valign: 'middle' } },
-        { content: grandTotal.a_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 10, valign: 'middle' } }
+        { content: grandTotal.p_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [241, 169, 131], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.p_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [241, 169, 131], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.p_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [241, 169, 131], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.p_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [241, 169, 131], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.a_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [181, 230, 162], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.a_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [181, 230, 162], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.a_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [181, 230, 162], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.a_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [181, 230, 162], halign: 'center', minCellHeight: 10, valign: 'middle' } }
       ]);
       doc.autoTable({
         startY: 38,
