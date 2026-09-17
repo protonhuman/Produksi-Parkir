@@ -993,13 +993,7 @@ async function generateUnikWorkbook(monthData, startDay, endDay) {
     AC(r1, 1, 'LAPORAN PENDAPATAN UNIK TANGGAL', fontBold, null, null, null);
     // H:I merged for the date
     ws.mergeCells(r1, 8, r1, 9);
-    if (d === 1) {
-      AC(r1, 8, new Date(Date.UTC(year, month-1, d, 12, 0, 0)), fontBold, null, null, alignCtr, 'd-mmm-yy');
-    } else {
-      // Reference previous day's date + 1
-      const prevH = (d - 2) * BLOCK_SIZE + 1;
-      AC(r1, 8, {formula: `H${prevH}+1`}, fontBold, null, null, alignCtr, 'd-mmm-yy');
-    }
+    AC(r1, 8, new Date(Date.UTC(year, month-1, d, 12, 0, 0)), fontBold, null, null, alignCtr, 'd-mmm-yy');
 
     // === ROW 2 of block: Sub-headers (merged spans) ===
     const r2 = baseRow + 1;
@@ -1042,12 +1036,7 @@ async function generateUnikWorkbook(monthData, startDay, endDay) {
 
     // Merge B for date (rows 5-11)
     ws.mergeCells(dataStartRow, 2, dataEndRow + 1, 2);
-    if (d === 1) {
-      AC(dataStartRow, 2, new Date(Date.UTC(year, month-1, d, 12, 0, 0)), fontBase, null, borderThin, alignCtr, 'd-mmm-yy');
-    } else {
-      const prevDataStart = (d - 2) * BLOCK_SIZE + 5;
-      AC(dataStartRow, 2, {formula: `B${prevDataStart}+1`}, fontBase, null, borderThin, alignCtr, 'd-mmm-yy');
-    }
+    AC(dataStartRow, 2, new Date(Date.UTC(year, month-1, d, 12, 0, 0)), fontBase, null, borderThin, alignCtr, 'd-mmm-yy');
 
     bankOrder.forEach((bank, bi) => {
       const row = dataStartRow + bi;
