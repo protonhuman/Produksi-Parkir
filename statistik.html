@@ -178,8 +178,8 @@
   <!-- UPLOAD SECTION -->
   <div class="section-label">Upload Data Harian</div>
   <div class="card">
-    <div class="upload-zone" id="uploadZone" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave()">
-      <input type="file" accept=".xlsx,.xls" id="fileInput" onchange="onFileSelect(event)">
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragenter="event.preventDefault(); event.stopPropagation()" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave()">
+      <input type="file" accept=".xlsx,.xls" id="fileInput" style="display:none" onchange="onFileSelect(event)">
       <div class="upload-icon">📊</div>
       <span class="upload-label">Upload File Statistik Harian</span>
       <div class="upload-filename" id="fileName">Seret atau klik pilih file .xlsx</div>
@@ -402,13 +402,17 @@ let selectedMonthKey = null; // 'YYYY_MM'
 let selectedDay = null;
 
 // ===== FILE UPLOAD HANDLERS =====
-function onDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+function onDragOver(e) { e.preventDefault(); e.stopPropagation(); document.getElementById('uploadZone').classList.add('drag-over'); }
 function onDragLeave() { document.getElementById('uploadZone').classList.remove('drag-over'); }
 function onDrop(e) {
-  e.preventDefault();
+  e.preventDefault(); e.stopPropagation();
   document.getElementById('uploadZone').classList.remove('drag-over');
   const file = e.dataTransfer.files[0];
-  if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) processFile(file);
+  if (!file || (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls'))) {
+    alert('Harap masukkan file Excel (.xlsx atau .xls) yang valid.');
+    return;
+  }
+  processFile(file);
 }
 function onFileSelect(e) {
   const file = e.target.files[0];
