@@ -204,13 +204,13 @@
   <div class="section-label">Upload PDF</div>
   <div class="card">
     <div class="upload-grid">
-      <div class="upload-zone" id="zone1" onclick="document.getElementById('file1').click()" ondragover="onDragOver(event,1)" ondrop="onDrop(event,1)" ondragleave="onDragLeave(1)">
+      <div class="upload-zone" id="zone1" onclick="document.getElementById('file1').click()" ondragenter="event.preventDefault(); event.stopPropagation()" ondragover="onDragOver(event,1)" ondrop="onDrop(event,1)" ondragleave="onDragLeave(1)">
         <input type="file" accept=".pdf" id="file1" style="display:none" onchange="onFileChange(1)">
         <div class="upload-icon">📄</div>
         <span class="upload-label" id="zone1Label">File PDF Hari Ini</span>
         <div class="upload-filename" id="zone1Name">Seret atau klik pilih file</div>
       </div>
-      <div class="upload-zone" id="zone2" onclick="document.getElementById('file2').click()" ondragover="onDragOver(event,2)" ondrop="onDrop(event,2)" ondragleave="onDragLeave(2)">
+      <div class="upload-zone" id="zone2" onclick="document.getElementById('file2').click()" ondragenter="event.preventDefault(); event.stopPropagation()" ondragover="onDragOver(event,2)" ondrop="onDrop(event,2)" ondragleave="onDragLeave(2)">
         <input type="file" accept=".pdf" id="file2" style="display:none" onchange="onFileChange(2)">
         <div class="upload-icon">📄</div>
         <span class="upload-label" id="zone2Label">File PDF Hari Berikutnya</span>
@@ -524,12 +524,15 @@ function onFileChange(n) {
   updateBtnState();
 }
 
-function onDragOver(e, n) { e.preventDefault(); document.getElementById(`zone${n}`).classList.add('drag-over'); }
+function onDragOver(e, n) { e.preventDefault(); e.stopPropagation(); document.getElementById(`zone${n}`).classList.add('drag-over'); }
 function onDragLeave(n) { document.getElementById(`zone${n}`).classList.remove('drag-over'); }
 function onDrop(e, n) {
-  e.preventDefault(); document.getElementById(`zone${n}`).classList.remove('drag-over');
+  e.preventDefault(); e.stopPropagation(); document.getElementById(`zone${n}`).classList.remove('drag-over');
   const file = e.dataTransfer.files[0];
-  if (!file || !file.name.endsWith('.pdf')) return;
+  if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
+    alert('Harap masukkan file PDF yang valid.');
+    return;
+  }
   if (n === 1) pdfData1 = file; else pdfData2 = file;
   const zone = document.getElementById(`zone${n}`);
   zone.classList.add('loaded');
