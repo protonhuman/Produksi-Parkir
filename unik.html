@@ -988,7 +988,7 @@ async function generateUnikWorkbook(monthData, startDay, endDay) {
     blockIdx++;
     const dd = monthData.days[String(d)];
 
-    const dateStrIndo = `${String(d).padStart(2, '0')} ${data.monthName.toUpperCase()} ${data.year}`;
+    const dateStrIndo = `${String(d).padStart(2, '0')} ${monthData.monthName.toUpperCase()} ${year}`;
     // === ROW 1 of block: Title row ===
     const r1 = baseRow;
     ws.mergeCells(r1, 1, r1, 3); // A to C
