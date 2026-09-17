@@ -1254,15 +1254,15 @@ async function onDownload(type = 'excel') {
 
       // Add Grand Total
       body.push([
-        { content: 'TOTAL PRODUKSI & PENDAPATAN UNIK', colSpan: 3, styles: { fontStyle: 'bold', halign: 'center', fillColor: [226, 239, 218], fontSize: 10, minCellHeight: 15, valign: 'middle' } },
-        { content: grandTotal.p_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 15, valign: 'middle' } },
-        { content: grandTotal.p_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 15, valign: 'middle' } },
-        { content: grandTotal.p_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 15, valign: 'middle' } },
-        { content: grandTotal.p_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 15, valign: 'middle' } },
-        { content: grandTotal.a_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 15, valign: 'middle' } },
-        { content: grandTotal.a_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 15, valign: 'middle' } },
-        { content: grandTotal.a_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 15, valign: 'middle' } },
-        { content: grandTotal.a_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 15, valign: 'middle' } }
+        { content: 'TOTAL PRODUKSI & PENDAPATAN UNIK', colSpan: 3, styles: { fontStyle: 'bold', halign: 'center', fillColor: [226, 239, 218], fontSize: 10, minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.p_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.p_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.p_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.p_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [180, 198, 231], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.a_r2.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.a_r4.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.a_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 10, valign: 'middle' } },
+        { content: grandTotal.a_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 10, valign: 'middle' } }
       ]);
 
       doc.autoTable({
@@ -1310,6 +1310,7 @@ async function onDownload(type = 'excel') {
           textColor: [0, 0, 0],
           lineWidth: 0.1,
           lineColor: [0, 0, 0],
+          cellPadding: 1.5,
         },
         headStyles: {
           textColor: [0, 0, 0],
