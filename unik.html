@@ -1197,7 +1197,44 @@ async function onDownload(type = 'excel') {
         const dd = data.days[String(d)] || null;
         let dayTotal = { p_r2: 0, p_r4: 0, p_r6: 0, p_tot: 0, a_r2: 0, a_r4: 0, a_r6: 0, a_tot: 0 };
 
+        const shortMonth = data.monthName.substring(0, 3);
+        const shortYear = String(data.year).slice(-2);
+        const dateStr = `${d}-${shortMonth}-${shortYear}`;
+
+        // Header 1: Title
+        body.push([
+          { content: 'LAPORAN PENDAPATAN UNIK TANGGAL', colSpan: 7, styles: { halign: 'left', valign: 'middle', fontStyle: 'bold', fillColor: [255, 255, 255] } },
+          { content: dateStr, colSpan: 4, styles: { halign: 'center', valign: 'middle', fontStyle: 'bold', fillColor: [255, 255, 255] } }
+        ]);
+
+        // Header 2: Sub-headers row 1
+        body.push([
+          { content: 'NO', rowSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228], fontStyle: 'bold' } },
+          { content: 'LAPORAN\nTRANSAKSI UNIK', rowSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228], fontStyle: 'bold' } },
+          { content: 'UNIK BY BANK', rowSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228], fontStyle: 'bold' } },
+          { content: 'LAPORAN TRANSAKSI UNIK HARIAN', colSpan: 8, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228], fontStyle: 'bold' } }
+        ]);
+
+        // Header 3: Sub-headers row 2
+        body.push([
+          { content: 'PRODUKSI', colSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231], fontStyle: 'bold' } },
+          { content: 'TOTAL PRODUKSI', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231], fontStyle: 'bold' } },
+          { content: 'PENDAPATAN', colSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206], fontStyle: 'bold' } },
+          { content: 'TOTAL PENDAPATAN', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206], fontStyle: 'bold' } }
+        ]);
+
+        // Header 4: Sub-headers row 3
+        body.push([
+          { content: 'R2', styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231], fontStyle: 'bold' } },
+          { content: 'R4', styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231], fontStyle: 'bold' } },
+          { content: 'R6', styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231], fontStyle: 'bold' } },
+          { content: 'R2', styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206], fontStyle: 'bold' } },
+          { content: 'R4', styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206], fontStyle: 'bold' } },
+          { content: 'R6', styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206], fontStyle: 'bold' } }
+        ]);
+
         banks.forEach((bank, idx) => {
+          // ...
           const pR2 = dd ? (dd[`${bank.key}_r2_qty`] || 0) : 0;
           const pR4 = dd ? (dd[`${bank.key}_r4_qty`] || 0) : 0;
           const pR6 = dd ? (dd[`${bank.key}_r6_qty`] || 0) : 0;
@@ -1214,7 +1251,7 @@ async function onDownload(type = 'excel') {
           const row = [];
           if (idx === 0) {
             row.push({ content: String(d), rowSpan: 7, styles: { halign: 'center', valign: 'middle' } });
-            row.push({ content: `${d} ${data.monthName} ${data.year}`, rowSpan: 7, styles: { halign: 'center', valign: 'middle' } });
+            row.push({ content: dateStr, rowSpan: 7, styles: { halign: 'center', valign: 'middle' } });
           }
           row.push({ content: bank.label, styles: { fontStyle: 'bold', halign: 'left' } });
 
@@ -1262,38 +1299,9 @@ async function onDownload(type = 'excel') {
         { content: grandTotal.a_r6.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 10, valign: 'middle' } },
         { content: grandTotal.a_tot.toLocaleString('id-ID'), styles: { fontStyle: 'bold', fillColor: [198, 239, 206], halign: 'center', minCellHeight: 10, valign: 'middle' } }
       ]);
-      const shortMonth = data.monthName.substring(0, 3);
-      const shortYear = String(data.year).slice(-2);
-      const dateStr = startDay === endDay ? `${startDay}-${shortMonth}-${shortYear}` : `${startDay}-${endDay} ${shortMonth} ${shortYear}`;
-
       doc.autoTable({
         startY: 38,
-        head: [
-          [
-            { content: 'LAPORAN PENDAPATAN UNIK TANGGAL', colSpan: 7, styles: { halign: 'left', valign: 'middle', fontStyle: 'bold', fillColor: [255, 255, 255] } },
-            { content: dateStr, colSpan: 4, styles: { halign: 'center', valign: 'middle', fontStyle: 'bold', fillColor: [255, 255, 255] } }
-          ],
-          [
-            { content: 'NO', rowSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228] } },
-            { content: 'LAPORAN\nTRANSAKSI UNIK', rowSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228] } },
-            { content: 'UNIK BY BANK', rowSpan: 3, styles: { halign: 'center', valign: 'middle', fillColor: [214, 220, 228] } },
-            { content: 'LAPORAN TRANSAKSI UNIK HARIAN', colSpan: 8, styles: { halign: 'center', fillColor: [214, 220, 228] } }
-          ],
-          [
-            { content: 'PRODUKSI', colSpan: 3, styles: { halign: 'center', fillColor: [180, 198, 231] } },
-            { content: 'TOTAL PRODUKSI', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [180, 198, 231] } },
-            { content: 'PENDAPATAN', colSpan: 3, styles: { halign: 'center', fillColor: [198, 239, 206] } },
-            { content: 'TOTAL PENDAPATAN', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [198, 239, 206] } }
-          ],
-          [
-            { content: 'R2', styles: { halign: 'center', fillColor: [180, 198, 231] } },
-            { content: 'R4', styles: { halign: 'center', fillColor: [180, 198, 231] } },
-            { content: 'R6', styles: { halign: 'center', fillColor: [180, 198, 231] } },
-            { content: 'R2', styles: { halign: 'center', fillColor: [198, 239, 206] } },
-            { content: 'R4', styles: { halign: 'center', fillColor: [198, 239, 206] } },
-            { content: 'R6', styles: { halign: 'center', fillColor: [198, 239, 206] } }
-          ]
-        ],
+        head: [],
         body: body,
         theme: 'grid',
         columnStyles: {
@@ -1315,7 +1323,7 @@ async function onDownload(type = 'excel') {
           textColor: [0, 0, 0],
           lineWidth: 0.1,
           lineColor: [0, 0, 0],
-          cellPadding: 1.5,
+          cellPadding: 0.8,
         },
         headStyles: {
           textColor: [0, 0, 0],
