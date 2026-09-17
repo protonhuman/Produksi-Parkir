@@ -204,14 +204,14 @@
   <div class="section-label">Upload PDF</div>
   <div class="card">
     <div class="upload-grid">
-      <div class="upload-zone" id="zone1" ondragover="onDragOver(event,1)" ondrop="onDrop(event,1)" ondragleave="onDragLeave(1)">
-        <input type="file" accept=".pdf" id="file1" onchange="onFileChange(1)">
+      <div class="upload-zone" id="zone1" onclick="document.getElementById('file1').click()" ondragover="onDragOver(event,1)" ondrop="onDrop(event,1)" ondragleave="onDragLeave(1)">
+        <input type="file" accept=".pdf" id="file1" style="display:none" onchange="onFileChange(1)">
         <div class="upload-icon">📄</div>
         <span class="upload-label" id="zone1Label">File PDF Hari Ini</span>
         <div class="upload-filename" id="zone1Name">Seret atau klik pilih file</div>
       </div>
-      <div class="upload-zone" id="zone2" ondragover="onDragOver(event,2)" ondrop="onDrop(event,2)" ondragleave="onDragLeave(2)">
-        <input type="file" accept=".pdf" id="file2" onchange="onFileChange(2)">
+      <div class="upload-zone" id="zone2" onclick="document.getElementById('file2').click()" ondragover="onDragOver(event,2)" ondrop="onDrop(event,2)" ondragleave="onDragLeave(2)">
+        <input type="file" accept=".pdf" id="file2" style="display:none" onchange="onFileChange(2)">
         <div class="upload-icon">📄</div>
         <span class="upload-label" id="zone2Label">File PDF Hari Berikutnya</span>
         <div class="upload-filename" id="zone2Name">Opsional (untuk Shift 3)</div>
