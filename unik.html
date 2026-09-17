@@ -1322,7 +1322,7 @@ async function onDownload(type = 'excel') {
         // However, to mimic 3 days per page:
         // We can group 3 days, but AutoTable handles rows natively. 
         // We'll let AutoTable naturally paginate it, which is much better.
-        margin: { top: 38, left: 10, right: 10, bottom: 15 },
+        margin: { top: 38, left: 10, right: 10, bottom: 10 },
         didDrawPage: function (data) {
           // If the page breaks naturally, re-draw the title on the new page
           if (data.pageNumber > 1) {
