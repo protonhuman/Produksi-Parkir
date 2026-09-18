@@ -11,83 +11,89 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
-
-  :root, body.theme-default {
-    --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335;
-    --border: #1e2d44; --accent: #a78bfa; --accent2: #ff6b35;
-    --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3;
-    --text-header: #ffffff; --btn-text: #000000;
-    --grid-color: rgba(167,139,250,0.03);
-  }
-
+  :root, body.theme-default { --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335; --border: #1e2d44; --accent: #00d4ff; --accent2: #ff6b35; --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3; --shift1: #00d4ff; --shift2: #ff6b35; --shift3: #a78bfa; --grid-color: rgba(0,212,255,0.03); }
+  body.theme-light { --bg: #f8fafc; --surface: #ffffff; --surface2: #f1f5f9; --border: #e2e8f0; --accent: #0ea5e9; --accent2: #f97316; --accent3: #10b981; --text: #0f172a; --text-dim: #64748b; --shift1: #0ea5e9; --shift2: #f97316; --shift3: #8b5cf6; --grid-color: rgba(14,165,233,0.06); }
+  body.theme-cyber { --bg: #050505; --surface: #0f0f13; --surface2: #1a1a24; --border: #333344; --accent: #f0f; --accent2: #ff2a2a; --accent3: #0f0; --text: #fff; --text-dim: #aaa; --shift1: #0ff; --shift2: #f0f; --shift3: #ff0; --grid-color: rgba(255,0,255,0.04); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg); color: var(--text);
-    font-family: 'DM Mono', monospace; min-height: 100vh;
-    overflow-x: hidden; transition: background-color 0.3s, color 0.3s;
-  }
-  body::before {
-    content: ''; position: fixed; inset: 0;
-    background-image: linear-gradient(var(--grid-color) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-    background-size: 40px 40px; pointer-events: none; z-index: 0;
-  }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--grid-color) 1px, transparent 1px), linear-gradient(90deg, var(--grid-color) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; transition: background-image 0.3s; }
+  .theme-btn { transition: transform 0.2s, box-shadow 0.2s; }
+  .theme-btn:hover { transform: scale(1.15); }
+  body.theme-default .btn-default { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  body.theme-light .btn-light { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  body.theme-cyber .btn-cyber { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  .container { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
 
-  .container { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  /* === NAV === */
+  .nav-menu { display: flex; gap: 4px; margin-bottom: 16px; }
+  .nav-link { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: none; padding: 6px 14px; border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); transition: all 0.15s; }
+  .nav-link:hover { color: var(--text); border-color: var(--accent); }
+  .nav-link.active { color: var(--accent); border-color: var(--accent); background: rgba(0,212,255,0.08); }
 
+  /* === HEADER === */
   header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
-  .header-badge {
-    display: inline-block; background: rgba(167,139,250,0.1);
-    border: 1px solid rgba(167,139,250,0.3); color: var(--accent);
-    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-    padding: 4px 12px; border-radius: 2px; margin-bottom: 12px;
-  }
-  h1 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--text-header); letter-spacing: -0.5px; }
+  .header-badge { display: inline-block; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--accent); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 4px 12px; border-radius: 2px; margin-bottom: 12px; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(20px, 4vw, 30px); font-weight: 800; line-height: 1.2; color: var(--text-header); letter-spacing: -0.5px; transition: color 0.3s; }
+  .logo-img { position: absolute; right: 0; bottom: 32px; max-width: 180px; height: auto; display: block; }
   h1 span { color: var(--accent); }
   .subtitle { margin-top: 6px; font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
 
+  /* === SECTIONS === */
+  .section-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
 
-  .upload-zone { border: 1px dashed var(--border); border-radius: 3px; padding: 32px 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; background: var(--surface2); }
-  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(167,139,250,0.05); }
+  /* === UPLOAD === */
+  .upload-zone { border: 1px dashed var(--border); border-radius: 3px; padding: 28px 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; background: var(--surface2); }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(0,212,255,0.05); }
   .upload-zone.loaded { border-color: var(--accent3); border-style: solid; background: rgba(124,252,110,0.04); }
   .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .upload-icon { font-size: 32px; margin-bottom: 12px; }
-  .upload-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 4px; }
-  .upload-filename { font-size: 13px; color: var(--accent3); margin-top: 8px; font-weight: bold; }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 4px; }
+  .upload-filename { font-size: 11px; color: var(--accent3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; margin: 0 auto; }
 
-  .detected-info { display: none; }
+  /* === DETECTED INFO === */
+  .detected-info { margin-top: 16px; display: none; }
   .detected-info.show { display: block; }
-  .field { margin-bottom: 16px; }
+  .settings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
   .field label { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
-  .field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; padding: 12px; border-radius: 3px; outline: none; }
-  .field input:focus { border-color: var(--accent); }
-  
-  .btn-primary { width: 100%; background: var(--accent); color: var(--btn-text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 16px; border-radius: 3px; cursor: pointer; transition: all 0.15s; margin-top: 8px; }
+  .field input, .field select { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 12px; border-radius: 3px; outline: none; transition: border-color 0.2s; }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field-full { grid-column: 1 / -1; }
+
+  /* === BUTTONS === */
+  .btn-primary { width: 100%; background: var(--accent); color: var(--btn-text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
   .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
   .btn-primary:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  .btn-download { background: var(--accent3); color: var(--btn-text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px 20px; border-radius: 3px; cursor: pointer; transition: all 0.15s; margin-top: 16px; width: 100%; }
+  .btn-download:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-download:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  .btn-danger { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; padding: 8px 16px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+  .btn-small { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 12px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+  .btn-small:hover { border-color: var(--accent); color: var(--text); }
 
-  .status { font-size: 12px; padding: 12px 16px; border-radius: 3px; margin-top: 16px; display: none; }
+  /* === STATUS === */
+  .status { font-size: 12px; padding: 10px 14px; border-radius: 3px; margin-top: 12px; display: none; }
   .status.show { display: block; }
-  .status.loading { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: var(--accent); }
+  .status.loading { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--accent); }
   .status.success { background: rgba(124,252,110,0.1); border: 1px solid rgba(124,252,110,0.3); color: var(--accent3); }
   .status.error { background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.3); color: var(--accent2); }
 
-  /* PIN OVERLAY CSS */
-  #pinOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-  #pinBox { background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 350px; width: 90%; }
-  .dark-theme #pinBox { background: #1e1e1e; color: #eee; }
-  #pinBox h2 { margin-top: 0; margin-bottom: 15px; font-size: 1.2rem; color: #000; font-family: sans-serif; letter-spacing: normal; }
-  #pinInput { width: 100%; padding: 12px; margin-bottom: 15px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box; background: white; color: #000; outline: none; }
-  .dark-theme #pinInput { background: #2d2d2d; border-color: #444; color: #fff; }
-  #pinBtn { background: #2563eb; color: white; border: none; padding: 12px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-family: sans-serif; text-transform: none; letter-spacing: normal; }
-  #pinBtn:hover { background: #1d4ed8; filter: none; }
-  #pinError { color: #dc2626; margin-bottom: 15px; display: none; font-weight: bold; font-size: 0.9rem; }
-  
-  /* Link navigasi */
-  .nav-menu { display: flex; gap: 8px; margin-bottom: 16px; }
-  .nav-link { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: none; padding: 6px 14px; border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); transition: all 0.15s; }
-  .nav-link:hover { color: var(--text); border-color: var(--accent); }
+  /* === TABLES === */
+  .table-wrap { overflow-x: auto; margin: 12px -4px; padding: 0 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: var(--surface2); padding: 8px 10px; text-align: left; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th.num { text-align: right; }
+  td { padding: 8px 10px; border-bottom: 1px solid rgba(30,45,68,0.5); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .td-label { color: var(--text-dim); }
+  .td-num { text-align: right; font-weight: 500; }
+  .td-total { color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 700; }
+  .td-total-label { color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  tr.total-row { background: rgba(0,212,255,0.04); }
+  .td-zero { color: var(--text-dim); opacity: 0.4; }
 
   /* === DAY GRID === */
   .stats-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
@@ -100,17 +106,43 @@
   .day-cell:hover { border-color: var(--accent); transform: translateY(-1px); }
   .day-cell.filled { border-color: rgba(124,252,110,0.4); background: rgba(124,252,110,0.06); color: var(--accent3); font-weight: 600; }
   .day-cell.filled::after { content: '✓'; position: absolute; top: 2px; right: 4px; font-size: 8px; color: var(--accent3); }
-  .day-cell.selected { border-color: var(--accent); background: rgba(167,139,250,0.12); color: var(--accent); box-shadow: 0 0 12px rgba(167,139,250,0.15); }
+  .day-cell.selected { border-color: var(--accent); background: rgba(0,212,255,0.12); color: var(--accent); box-shadow: 0 0 12px rgba(0,212,255,0.15); }
   .day-cell.empty { color: var(--text-dim); opacity: 0.5; }
-  
+
+  /* === DETAIL VIEW === */
+  .detail-section { margin-top: 16px; display: none; }
+  .detail-section.show { display: block; }
+  .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .detail-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--accent); }
+
   /* === MONTH SELECTOR === */
   .month-selector { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
   .month-selector select { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 12px; border-radius: 3px; outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7fa3' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
   .month-selector select:focus { border-color: var(--accent); }
-  
-  .btn-download { background: var(--accent3); color: var(--btn-text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px 20px; border-radius: 3px; cursor: pointer; transition: all 0.15s; margin-top: 16px; width: 100%; }
-  .btn-download:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
-  .btn-download:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+
+  /* === SECTIONS VISIBILITY === */
+  .hidden { display: none !important; }
+
+  /* === ANIMATIONS === */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.3s ease forwards; }
+  @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 rgba(0,212,255,0); } 50% { box-shadow: 0 0 16px rgba(0,212,255,0.3); } }
+  .pulse { animation: pulseGlow 1.5s ease infinite; }
+
+  /* === FOOTNOTE === */
+  .footnote { margin-top: 32px; font-size: 10px; color: var(--text-dim); text-align: center; letter-spacing: 1px; line-height: 1.8; }
+  .pill { display: inline-block; padding: 2px 8px; background: rgba(255,255,255,0.05); border-radius: 2px; font-size: 10px; color: var(--text-dim); border: 1px solid var(--border); }
+
+/* PIN OVERLAY CSS */
+#pinOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+#pinBox { background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 350px; width: 90%; }
+.dark-theme #pinBox { background: #1e1e1e; color: #eee; }
+#pinBox h2 { margin-top: 0; margin-bottom: 15px; font-size: 1.2rem; }
+#pinInput { width: 100%; padding: 12px; margin-bottom: 15px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+.dark-theme #pinInput { background: #2d2d2d; border-color: #444; color: #fff; }
+#pinBtn { background: #2563eb; color: white; border: none; padding: 12px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+#pinBtn:hover { background: #1d4ed8; }
+#pinError { color: #dc2626; margin-bottom: 15px; display: none; font-weight: bold; font-size: 0.9rem; }
 
 </style>
 </head>
@@ -125,19 +157,29 @@
   </div>
 
   
+  
   <div class="container">
-    <header>
-      <div class="nav-menu">
-         <a href="/" class="nav-link">Produksi Parkir</a>
-         <a href="/statistik" class="nav-link">Statistik Parkir</a>
-         <a href="/unik" class="nav-link">Rekapitulasi UNIK</a>
-         <a href="/lgh_casual" class="nav-link" style="color: var(--accent); border-color: var(--accent); background: rgba(167,139,250,0.08);">LGH Casual</a>
-      </div>
-      <div class="header-badge">Generator</div>
-      <h1>LGH <span>Casual</span></h1>
-      <div class="subtitle">Generate Rekapitulasi Laporan Gabungan Harian dari UNIK</div>
-    </header>
+    
+  <header style="position: relative;">
+    <div class="theme-switcher" style="position: absolute; right: 0; top: 0; display: flex; gap: 8px;">
+      <button class="theme-btn btn-default" onclick="setTheme('theme-default')" title="Default Dark" style="background:#0a0e1a; border:2px solid #1e2d44; width:26px; height:26px; border-radius:50%; cursor:pointer;"></button>
+      <button class="theme-btn btn-light" onclick="setTheme('theme-light')" title="Light Clean" style="background:#f8fafc; border:2px solid #e2e8f0; width:26px; height:26px; border-radius:50%; cursor:pointer;"></button>
+      <button class="theme-btn btn-cyber" onclick="setTheme('theme-cyber')" title="Cyberpunk" style="background:#050505; border:2px solid #f0f; width:26px; height:26px; border-radius:50%; cursor:pointer;"></button>
+    </div>
+    <img src="logo.png" alt="Angkasa Pura Supports" class="logo-img" onerror="this.style.display='none'">
+    <div class="header-badge">PT Angkasa Pura Supports</div>
+    <nav class="nav-menu">
+      <a href="/" class="nav-link">Produksi Parkir</a>
+      <a href="/statistik" class="nav-link">Statistik Parkir</a>
+      <a href="/unik" class="nav-link">Rekapitulasi UNIK</a>
+      <a href="/lgh_casual" class="nav-link active">LGH Casual</a>
+    </nav>
+    <h1>LGH <span>Casual</span></h1>
+    <div class="subtitle">Generate Rekapitulasi Laporan Gabungan Harian dari UNIK</div>
+  </header>
 
+
+    <div class="section-label">Upload Data Harian</div>
     <div class="card">
       <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
         <input type="file" id="fileInput" accept=".xlsx, .xls" style="display:none">
@@ -148,12 +190,12 @@
     </div>
 
     <div class="card detected-info" id="detectedInfo">
-      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-        <div class="field" style="flex:1">
+      <div class="settings-grid" style="margin-top:16px">
+        <div class="field">
           <label>Tanggal</label>
           <input type="number" id="inputDay" min="1" max="31" value="1">
         </div>
-        <div class="field" style="flex:1">
+        <div class="field">
           <label>Bulan</label>
           <select id="inputMonth">
             <option value="1">Januari</option><option value="2">Februari</option>
@@ -164,16 +206,17 @@
             <option value="11">November</option><option value="12">Desember</option>
           </select>
         </div>
-        <div class="field" style="flex:1">
+        <div class="field">
           <label>Tahun</label>
           <input type="number" id="inputYear" min="2020" max="2100" value="2026">
         </div>
       </div>
-      <button class="btn-primary" id="processBtn" onclick="processData()">💾 SIMPAN KE REKAP BULANAN</button>
+      <button class="btn-primary" id="processBtn" onclick="processData()" style="margin-top: 16px;">💾 SIMPAN KE REKAP BULANAN</button>
       <div id="statusMsg" class="status"></div>
     </div>
 
-    <div style="margin-top: 32px;" class="section-label">Rekap Bulanan</div>
+
+    <div class="section-label">Rekap Bulanan</div>
     <div class="card">
       <div class="month-selector">
         <select id="selectMonth" onchange="onMonthChange()"></select>
@@ -198,6 +241,15 @@
   </div>
 
   <script>
+    function setTheme(theme) {
+      document.body.className = theme;
+      localStorage.setItem('parkirTheme', theme);
+    }
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedTheme = localStorage.getItem('parkirTheme');
+      if (savedTheme) document.body.className = savedTheme;
+    });
+
     let supabaseUrl, supabaseKey, supabaseClient;
     
     const BULAN_INDO = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
@@ -226,17 +278,30 @@
       loadAllMonthsFromCloud();
     }
     
+    
     async function loadAllMonthsFromCloud() {
       if(!supabaseClient) return;
       try {
         const { data, error } = await supabaseClient.from('app_settings').select('setting_key, setting_value').like('setting_key', 'lgh_%');
         if (data) {
-          data.forEach(d => { cloudData[d.setting_key] = typeof d.setting_value === 'string' ? JSON.parse(d.setting_value) : d.setting_value; });
+          data.forEach(d => { 
+            let val = typeof d.setting_value === 'string' ? JSON.parse(d.setting_value) : d.setting_value;
+            // If it's an Array (old format), we wrap it in our new format for day 1
+            if (Array.isArray(val)) {
+              let [_, yr, mo] = d.setting_key.split('_');
+              let yrNum = parseInt(yr); let moNum = parseInt(mo);
+              val = { year: yrNum, month: moNum, monthName: BULAN_INDO[moNum-1], days: { 1: val } };
+            }
+            // Ensure days exists
+            if (val && typeof val === 'object' && !val.days) val.days = {};
+            cloudData[d.setting_key] = val;
+          });
           updateMonthSelector();
           if (selectedMonthKey) onMonthChange();
         }
       } catch(e) { console.error(e); }
     }
+
 
     function getMonthKey(year, month) {
       return `lgh_${year}_${String(month).padStart(2,'0')}`;
@@ -277,6 +342,7 @@
       renderDayGrid();
     }
 
+    
     function renderDayGrid() {
       const grid = document.getElementById('dayGrid');
       grid.innerHTML = '';
@@ -288,8 +354,11 @@
       }
       
       const mData = cloudData[selectedMonthKey];
+      if (!mData.days) mData.days = {}; // Fail safe
+      
       const daysInMonth = new Date(mData.year, mData.month, 0).getDate();
       const filledCount = Object.keys(mData.days).length;
+
       document.getElementById('statsCount').textContent = `${filledCount} / ${daysInMonth}`;
       document.getElementById('progressFill').style.width = `${(filledCount/daysInMonth)*100}%`;
       
@@ -495,9 +564,17 @@
         });
 
         setStatus('Menyimpan ke Rekap Bulanan...', 'loading');
+        
         const key = getMonthKey(year, month);
-        let mData = cloudData[key] || { year, month, monthName: BULAN_INDO[month-1], days: {} };
+        let mData = cloudData[key];
+        // Ensure mData is object and has days
+        if (!mData || Array.isArray(mData)) {
+           mData = { year, month, monthName: BULAN_INDO[month-1], days: {} };
+        }
+        if (!mData.days) mData.days = {};
+        
         mData.days[day] = dataRows;
+
         
         await saveMonth(key, mData);
 
