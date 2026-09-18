@@ -682,6 +682,27 @@
           return a.posKeluar.localeCompare(b.posKeluar, undefined, {numeric: true});
         });
 
+        if (dataRows.length === 0) {
+          let debugStr = [];
+          sheet.eachRow({ includeEmpty: false }, (r, idx) => {
+             if(idx <= 10) {
+                let rowVals = [];
+                for(let c=1; c<=15; c++) {
+                   let val = r.getCell(c).value;
+                   if (val && typeof val === 'object' && val.richText) {
+                       val = val.richText.map(rt => rt.text).join('');
+                   }
+                   rowVals.push(val);
+                }
+                debugStr.push("R" + idx + ": " + JSON.stringify(rowVals));
+             }
+          });
+          alert("TIDAK ADA DATA TERSIMPAN! Struktur File:\n" + debugStr.join("\n"));
+          setStatus('Gagal: Kolom tidak cocok atau file kosong', 'error');
+          document.getElementById('processBtn').disabled = false;
+          return;
+        }
+
         setStatus('Menyimpan ke Rekap Bulanan...', 'loading');
         
         const key = getMonthKey(year, month);
