@@ -685,7 +685,7 @@
         if (dataRows.length === 0) {
           let debugStr = [];
           sheet.eachRow({ includeEmpty: false }, (r, idx) => {
-             if(idx <= 10) {
+             if(idx >= 10 && idx <= 35) {
                 let rowVals = [];
                 for(let c=1; c<=15; c++) {
                    let val = r.getCell(c).value;
