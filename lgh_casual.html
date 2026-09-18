@@ -578,12 +578,10 @@
       dropZone.classList.add('loaded');
       document.getElementById('detectedInfo').classList.add('show');
       
-      const match = file.name.match(/(?:UNIK|LGH)\s+(.*)\.xlsx?/i);
-      if(match && match[1]) {
-        document.getElementById('detectedDate').value = match[1].trim().toUpperCase();
-      } else {
-        document.getElementById('detectedDate').value = '';
-      }
+      const { day, month, year } = parseDateFromFilename(file.name);
+      document.getElementById('inputDay').value = day;
+      document.getElementById('inputMonth').value = month;
+      document.getElementById('inputYear').value = year;
     }
 
     function setStatus(msg, type) {
