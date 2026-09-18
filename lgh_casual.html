@@ -233,7 +233,31 @@
       </div>
 
       <div class="day-grid" id="dayGrid"></div>
-      
+
+      <!-- DETAIL VIEW -->
+      <div class="detail-section" id="detailSection">
+        <div class="detail-header">
+          <div class="detail-title" id="detailTitle">—</div>
+          <button class="btn-danger" id="btnDelete" onclick="onDeleteDay()">✕ Hapus</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Shift</th>
+                <th>Pos Keluar</th>
+                <th>Petugas</th>
+                <th class="num">Qty Tunai</th>
+                <th class="num">Amt Tunai</th>
+                <th class="num">Qty UNIK</th>
+                <th class="num">Amt UNIK</th>
+              </tr>
+            </thead>
+            <tbody id="detailBody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <button class="btn-download" id="btnDownloadMonthly" onclick="downloadMonthlyLGH()" disabled>
         ⬇ DOWNLOAD LGH BULANAN (1 SHEET)
       </button>
@@ -359,6 +383,9 @@
     }
 
     
+    
+    let selectedDay = null;
+
     function renderDayGrid() {
       const grid = document.getElementById('dayGrid');
       grid.innerHTML = '';
@@ -366,6 +393,7 @@
       if (!selectedMonthKey || !cloudData[selectedMonthKey]) {
         document.getElementById('statsCount').textContent = '0 / 31';
         document.getElementById('progressFill').style.width = '0%';
+        hideDayDetail();
         return;
       }
       
@@ -374,7 +402,6 @@
       
       const daysInMonth = new Date(mData.year, mData.month, 0).getDate();
       const filledCount = Object.keys(mData.days).length;
-
       document.getElementById('statsCount').textContent = `${filledCount} / ${daysInMonth}`;
       document.getElementById('progressFill').style.width = `${(filledCount/daysInMonth)*100}%`;
       
@@ -382,11 +409,86 @@
 
       for (let d = 1; d <= daysInMonth; d++) {
         const div = document.createElement('div');
-        div.className = 'day-cell ' + (mData.days[d] ? 'filled' : 'empty');
+        const isFilled = !!mData.days[d];
+        div.className = 'day-cell ' + (isFilled ? 'filled' : 'empty');
+        if (selectedDay === d) div.classList.add('selected');
         div.textContent = d;
+        
+        div.onclick = () => {
+          selectedDay = d;
+          renderDayGrid();
+          if (isFilled) showDayDetail(d, mData.days[d]);
+          else hideDayDetail();
+        };
         grid.appendChild(div);
       }
     }
+
+    function showDayDetail(day, dayData) {
+      document.getElementById('detailSection').classList.add('show');
+      const mData = cloudData[selectedMonthKey];
+      document.getElementById('detailTitle').textContent = `Tanggal ${day} ${mData.monthName} ${mData.year}`;
+      
+      const tbody = document.getElementById('detailBody');
+      tbody.innerHTML = '';
+      
+      let totCq = 0, totCa = 0, totUq = 0, totUa = 0;
+      
+      dayData.forEach(row => {
+        let cq = row.cash.r2.qty + row.cash.r4.qty + row.cash.vip.qty + row.cash.inapTanpaKanopi.qty + row.cash.inapKanopi.qty;
+        let ca = row.cash.r2.amt + row.cash.r4.amt + row.cash.vip.amt + row.cash.inapTanpaKanopi.amt + row.cash.inapKanopi.amt;
+        let uq = row.unik.r2.qty + row.unik.r4.qty;
+        let ua = row.unik.r2.amt + row.unik.r4.amt;
+        
+        totCq += cq; totCa += ca; totUq += uq; totUa += ua;
+        
+        tbody.innerHTML += `<tr>
+          <td>${row.shift}</td>
+          <td>${row.posKeluar}</td>
+          <td>${row.petugas}</td>
+          <td class="td-num ${cq===0?'td-zero':''} ">${cq.toLocaleString('id-ID')}</td>
+          <td class="td-num ${ca===0?'td-zero':''} ">${ca.toLocaleString('id-ID')}</td>
+          <td class="td-num ${uq===0?'td-zero':''} ">${uq.toLocaleString('id-ID')}</td>
+          <td class="td-num ${ua===0?'td-zero':''} ">${ua.toLocaleString('id-ID')}</td>
+        </tr>`;
+      });
+      
+      tbody.innerHTML += `<tr class="total-row">
+        <td class="td-total-label" colspan="3">— GRAND TOTAL</td>
+        <td class="td-total">${totCq.toLocaleString('id-ID')}</td>
+        <td class="td-total">${totCa.toLocaleString('id-ID')}</td>
+        <td class="td-total">${totUq.toLocaleString('id-ID')}</td>
+        <td class="td-total">${totUa.toLocaleString('id-ID')}</td>
+      </tr>`;
+    }
+
+    function hideDayDetail() {
+      const sec = document.getElementById('detailSection');
+      if(sec) sec.classList.remove('show');
+    }
+
+    async function onDeleteDay() {
+      if (!selectedMonthKey || !selectedDay) return;
+      if (!confirm(`Yakin ingin menghapus data tanggal ${selectedDay}?`)) return;
+      
+      const mData = cloudData[selectedMonthKey];
+      delete mData.days[selectedDay];
+      
+      try {
+        const { data: existing } = await supabaseClient.from('app_settings').select('id').eq('setting_key', selectedMonthKey).single();
+        if (existing) {
+          await supabaseClient.from('app_settings').update({ setting_value: mData }).eq('id', existing.id);
+        }
+        selectedDay = null;
+        hideDayDetail();
+        renderDayGrid();
+        alert('Data berhasil dihapus dari cloud!');
+      } catch(e) {
+        console.error(e);
+        alert('Gagal menghapus data.');
+      }
+    }
+
 
     // ===== PIN LOGIC =====
     async function checkPinAndInit(pin) {
