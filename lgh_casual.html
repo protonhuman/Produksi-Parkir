@@ -634,19 +634,19 @@
               return typeof val === 'number' ? val : 0;
             };
 
-            const rawUser = getVal(4) || '';
-            const rawGate = getVal(5) || '';
-            let posKeluar = rawGate;
-            const pkMatch = rawGate.match(/PK\s*(\d+)/i);
-            if (pkMatch) posKeluar = 'PK-' + pkMatch[1];
-            
-            const vehicle = (getVal(6) || '').toUpperCase();
-            
-            const cashQty = getNum(7);
-            const cashAmt = getNum(8);
-            
-            const unikQty = getNum(9) + getNum(11) + getNum(14) + getNum(16);
-            const unikAmt = getNum(10) + getNum(13) + getNum(15) + getNum(17);
+            const rawUser = getVal(3) || '';
+          const rawGate = getVal(4) || '';
+          let posKeluar = rawGate;
+          const pkMatch = String(rawGate).match(/PK\s*(\d+)/i);
+          if (pkMatch) posKeluar = 'PK-' + pkMatch[1];
+          
+          const vehicle = String(getVal(5) || '').toUpperCase();
+          
+          const cashQty = getNum(6);
+          const cashAmt = getNum(7);
+          
+          const unikQty = getNum(8) + getNum(10) + getNum(13) + getNum(15);
+          const unikAmt = getNum(9) + getNum(12) + getNum(14) + getNum(16);
 
             if(cashQty === 0 && cashAmt === 0 && unikQty === 0 && unikAmt === 0) return;
 
