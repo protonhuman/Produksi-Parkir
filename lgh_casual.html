@@ -288,11 +288,14 @@
       for (let i = 0; i < BULAN_INDO.length; i++) {
         if (name.includes(BULAN_INDO[i].toUpperCase())) { month = i + 1; break; }
       }
-      const numMatch = name.match(/(\d{1,2})(?:\.\w+)?$/);
+      
+      // Look for the first 1-2 digit number surrounded by word boundaries (e.g., the '24' in 'LGH_24 AGUSTUS 2026.xlsx')
+      const numMatch = name.match(/\b(\d{1,2})\b/);
       if (numMatch) {
         const d = parseInt(numMatch[1]);
         if (d >= 1 && d <= 31) day = d;
       }
+      
       const yrMatch = name.match(/(20\d{2})/);
       if (yrMatch) year = parseInt(yrMatch[1]);
       return { day, month, year };
