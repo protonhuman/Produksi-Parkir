@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rekapitulasi LGH Casual</title>
+<meta name="description" content="Generator LGH Casual dari file UNIK Harian">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+  :root, body.theme-default {
+    --bg: #0a0e1a; --surface: #111827; --surface2: #1a2335;
+    --border: #1e2d44; --accent: #a78bfa; --accent2: #ff6b35;
+    --accent3: #7cfc6e; --text: #e8f0fe; --text-dim: #6b7fa3;
+    --text-header: #ffffff; --btn-text: #000000;
+    --grid-color: rgba(167,139,250,0.03);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Mono', monospace; min-height: 100vh;
+    overflow-x: hidden; transition: background-color 0.3s, color 0.3s;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(var(--grid-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  .header-badge {
+    display: inline-block; background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.3); color: var(--accent);
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 2px; margin-bottom: 12px;
+  }
+  h1 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--text-header); letter-spacing: -0.5px; }
+  h1 span { color: var(--accent); }
+  .subtitle { margin-top: 6px; font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+
+  .upload-zone { border: 1px dashed var(--border); border-radius: 3px; padding: 32px 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; background: var(--surface2); }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(167,139,250,0.05); }
+  .upload-zone.loaded { border-color: var(--accent3); border-style: solid; background: rgba(124,252,110,0.04); }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 32px; margin-bottom: 12px; }
+  .upload-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 4px; }
+  .upload-filename { font-size: 13px; color: var(--accent3); margin-top: 8px; font-weight: bold; }
+
+  .detected-info { display: none; }
+  .detected-info.show { display: block; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; padding: 12px; border-radius: 3px; outline: none; }
+  .field input:focus { border-color: var(--accent); }
+  
+  .btn-primary { width: 100%; background: var(--accent); color: var(--btn-text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 16px; border-radius: 3px; cursor: pointer; transition: all 0.15s; margin-top: 8px; }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+
+  .status { font-size: 12px; padding: 12px 16px; border-radius: 3px; margin-top: 16px; display: none; }
+  .status.show { display: block; }
+  .status.loading { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: var(--accent); }
+  .status.success { background: rgba(124,252,110,0.1); border: 1px solid rgba(124,252,110,0.3); color: var(--accent3); }
+  .status.error { background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.3); color: var(--accent2); }
+
+  #pinOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+  #pinBox { background: #111827; padding: 32px; border-radius: 8px; border: 1px solid var(--border); text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-width: 350px; width: 90%; }
+  #pinBox h2 { margin-top: 0; margin-bottom: 16px; font-size: 16px; color: var(--text-header); font-family: 'Syne', sans-serif; letter-spacing: 1px; }
+  #pinInput { width: 100%; padding: 12px; margin-bottom: 16px; font-size: 20px; text-align: center; letter-spacing: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); border-radius: 4px; box-sizing: border-box; outline: none; }
+  #pinInput:focus { border-color: var(--accent); }
+  #pinBtn { background: var(--accent); color: var(--btn-text); border: none; padding: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; font-family: 'Syne', sans-serif; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; }
+  #pinBtn:hover { filter: brightness(1.1); }
+  #pinError { color: var(--accent2); margin-bottom: 16px; display: none; font-size: 11px; }
+  
+  /* Link navigasi */
+  .nav-menu { display: flex; gap: 8px; margin-bottom: 16px; }
+  .nav-link { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: none; padding: 6px 14px; border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); transition: all 0.15s; }
+  .nav-link:hover { color: var(--text); border-color: var(--accent); }
+</style>
+</head>
+<body class="theme-default">
+  <div id="pinOverlay">
+    <div id="pinBox">
+      <h2>🔒 Masukkan PIN Keamanan</h2>
+      <div id="pinError">PIN Salah atau Server Error!</div>
+      <input type="password" id="pinInput" placeholder="••••" maxlength="30" onkeypress="if(event.key === 'Enter') submitPin()" />
+      <button id="pinBtn" onclick="submitPin()">Akses Sistem</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <header>
+      <div class="nav-menu">
+         <a href="index.html" class="nav-link">Dashboard</a>
+         <a href="unik.html" class="nav-link">UNIK</a>
+         <a href="statistik.html" class="nav-link">Statistik</a>
+         <a href="lgh_casual.html" class="nav-link" style="color: var(--accent); border-color: var(--accent); background: rgba(167,139,250,0.08);">LGH Casual</a>
+      </div>
+      <div class="header-badge">Generator</div>
+      <h1>LGH <span>Casual</span></h1>
+      <div class="subtitle">Generate Rekapitulasi Laporan Gabungan Harian dari UNIK</div>
+    </header>
+
+    <div class="card">
+      <div class="upload-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".xlsx, .xls">
+        <div class="upload-icon">📁</div>
+        <span class="upload-label">UPLOAD FILE UNIK.XLSX</span>
+        <div class="upload-filename" id="filenameDisplay">Belum ada file terpilih</div>
+      </div>
+    </div>
+
+    <div class="card detected-info" id="detectedInfo">
+      <div class="field">
+        <label>Tanggal Dokumen (Untuk disave ke Cloud)</label>
+        <input type="text" id="detectedDate" placeholder="Cth: 24 AGUSTUS 2026">
+      </div>
+      <button class="btn-primary" id="processBtn" onclick="processData()">Proses & Download LGH</button>
+      <div id="statusMsg" class="status"></div>
+    </div>
+  </div>
+
+  <script>
+    let supabaseUrl, supabaseKey, supabaseClient;
+    let selectedFile = null;
+
+    // ===== PIN LOGIC =====
+    async function checkPinAndInit(pin) {
+      const btn = document.getElementById('pinBtn');
+      const err = document.getElementById('pinError');
+      btn.textContent = 'Memeriksa...';
+      btn.disabled = true;
+      err.style.display = 'none';
+
+      try {
+        let conf = null;
+
+        // 1. Coba fetch ke /api/config
+        try {
+          const res = await fetch('/api/config', { headers: { 'x-app-pin': pin } });
+          if (res.ok) conf = await res.json();
+        } catch (fetchErr) {}
+
+        // 2. Fallback offline jika PIN parkirbdj atau 123456
+        if (!conf && (pin === 'parkirbdj' || pin === '123456')) {
+          conf = {
+            supabaseUrl: 'https://nbxcvigngtzeymoleuvc.supabase.co',
+            supabaseKey: 'sb_publishable_C8ce4W1sC4VoDiRKnwkbhw_faMXX5lT',
+            defaultGasUrl: 'https://script.google.com/macros/s/AKfycbxrSqP9kCSNpfNmU4uVjuMtEFxLAImLz4NMUqoUZDSktXzfnL1CBPFocEdgtzBPWM-5/exec'
+          };
+        }
+
+        if (!conf) throw new Error('Password / PIN Salah atau tidak ada koneksi!');
+
+        supabaseUrl = conf.supabaseUrl;
+        supabaseKey = conf.supabaseKey;
+        if (typeof supabase !== 'undefined' && supabase.createClient) {
+          supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        }
+        document.getElementById('pinOverlay').style.display = 'none';
+        document.body.style.overflow = 'auto';
+        sessionStorage.setItem('appPin', pin);
+      } catch (e) {
+        err.style.display = 'block';
+        err.textContent = e.message || 'PIN Salah atau tidak ada koneksi!';
+        btn.textContent = 'Akses Sistem';
+        btn.disabled = false;
+        sessionStorage.removeItem('appPin');
+      }
+    }
+
+    window.submitPin = function() {
+      const pin = document.getElementById('pinInput').value.trim();
+      if (pin) checkPinAndInit(pin);
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedPin = sessionStorage.getItem('appPin');
+      if (savedPin) {
+        checkPinAndInit(savedPin);
+      }
+    });
+
+    // UI Effects
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      let dt = e.dataTransfer;
+      let files = dt.files;
+      if(files.length) handleFiles(files[0]);
+    });
+    fileInput.addEventListener('change', function() {
+      if(this.files.length) handleFiles(this.files[0]);
+    });
+
+    function handleFiles(file) {
+      selectedFile = file;
+      document.getElementById('filenameDisplay').textContent = file.name;
+      dropZone.classList.add('loaded');
+      document.getElementById('detectedInfo').classList.add('show');
+      
+      const match = file.name.match(/(?:UNIK|LGH)\s+(.*)\.xlsx?/i);
+      if(match && match[1]) {
+        document.getElementById('detectedDate').value = match[1].trim().toUpperCase();
+      } else {
+        document.getElementById('detectedDate').value = '';
+      }
+    }
+
+    function setStatus(msg, type) {
+      const el = document.getElementById('statusMsg');
+      el.textContent = msg;
+      el.className = 'status show ' + type;
+    }
+
+    async function saveToCloud(dateStr, lghData) {
+      if(!supabaseClient) return;
+      try {
+        const key = 'lgh_casual_' + dateStr.replace(/\s+/g, '_').toLowerCase();
+        const { data: existing } = await supabaseClient.from('app_settings').select('id').eq('setting_key', key).single();
+        if (existing) {
+          await supabaseClient.from('app_settings').update({ setting_value: JSON.stringify(lghData) }).eq('id', existing.id);
+        } else {
+          await supabaseClient.from('app_settings').insert([{ setting_key: key, setting_value: JSON.stringify(lghData) }]);
+        }
+      } catch(e) {
+        console.error('Cloud save err:', e);
+      }
+    }
+
+    // MAIN PROCESSING LOGIC
+    async function processData() {
+      if(!selectedFile) return;
+      const dateStr = document.getElementById('detectedDate').value.trim();
+      if(!dateStr) {
+        setStatus('Tentukan tanggal deteksi!', 'error');
+        return;
+      }
+      
+      setStatus('Membaca file Excel...', 'loading');
+      document.getElementById('processBtn').disabled = true;
+
+      try {
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(await selectedFile.arrayBuffer());
+        const sheet = wb.worksheets[0];
+        
+        let groups = {};
+        let currentShift = 1;
+
+        sheet.eachRow({ includeEmpty: true }, (row, rowNum) => {
+          // Identify shift row (starts with SHF)
+          const colC = row.getCell(3).value;
+          let textC = '';
+          if (colC && colC.richText) textC = colC.richText[0].text || '';
+          else if (typeof colC === 'string') textC = colC;
+          
+          if(textC && textC.startsWith('SHF')) {
+             const shiftNum = textC.replace(/\D/g, '');
+             if(shiftNum) currentShift = parseInt(shiftNum);
+             return;
+          }
+          
+          // Data rows have a numeric "No." in column 3
+          if (typeof colC === 'number') {
+            const getVal = (idx) => {
+              const c = row.getCell(idx).value;
+              if (c && c.richText) return c.richText.map(rt=>rt.text).join('').trim();
+              if (typeof c === 'string') return c.trim();
+              return c;
+            };
+            const getNum = (idx) => {
+              const val = row.getCell(idx).value;
+              return typeof val === 'number' ? val : 0;
+            };
+
+            const rawUser = getVal(4) || '';
+            const rawGate = getVal(5) || '';
+            let posKeluar = rawGate;
+            const pkMatch = rawGate.match(/PK\s*(\d+)/i);
+            if (pkMatch) posKeluar = 'PK-' + pkMatch[1];
+            
+            const vehicle = (getVal(6) || '').toUpperCase();
+            
+            const cashQty = getNum(7);
+            const cashAmt = getNum(8);
+            
+            // Unik = Mandiri(9,10) + BRI(11,13) + BCA(14,15) + BNI(16,17) 
+            const unikQty = getNum(9) + getNum(11) + getNum(14) + getNum(16);
+            const unikAmt = getNum(10) + getNum(13) + getNum(15) + getNum(17);
+
+            if(cashQty === 0 && cashAmt === 0 && unikQty === 0 && unikAmt === 0) return;
+
+            const isR2 = vehicle === 'MOTORCYCLE';
+            const isR4 = ['CAR', 'BOX', 'BOX/TRUCK', 'BUS', 'INAP TANPA KANOPI', 'INAP KANOPI', 'VIP', 'VVIP'].includes(vehicle);
+            
+            const groupKey = currentShift + '_' + posKeluar + '_' + rawUser;
+            if(!groups[groupKey]) {
+              groups[groupKey] = {
+                shift: currentShift,
+                posKeluar: posKeluar,
+                petugas: rawUser,
+                cash: {
+                  r2: {qty:0, amt:0},
+                  r4: {qty:0, amt:0},
+                  vip: {qty:0, amt:0},
+                  inapTanpaKanopi: {qty:0, amt:0},
+                  inapKanopi: {qty:0, amt:0}
+                },
+                unik: {
+                  r2: {qty:0, amt:0},
+                  r4: {qty:0, amt:0}
+                }
+              };
+            }
+            
+            const g = groups[groupKey];
+            
+            if (unikQty > 0 || unikAmt > 0) {
+              if (isR2) { g.unik.r2.qty += unikQty; g.unik.r2.amt += unikAmt; }
+              else if (isR4) { g.unik.r4.qty += unikQty; g.unik.r4.amt += unikAmt; }
+            }
+            
+            if (cashQty > 0 || cashAmt > 0) {
+              if (isR2) { g.cash.r2.qty += cashQty; g.cash.r2.amt += cashAmt; }
+              else if (['CAR', 'BOX', 'BOX/TRUCK', 'BUS'].includes(vehicle)) { g.cash.r4.qty += cashQty; g.cash.r4.amt += cashAmt; }
+              else if (['VIP', 'VVIP'].includes(vehicle)) { g.cash.vip.qty += cashQty; g.cash.vip.amt += cashAmt; }
+              else if (vehicle === 'INAP TANPA KANOPI') { g.cash.inapTanpaKanopi.qty += cashQty; g.cash.inapTanpaKanopi.amt += cashAmt; }
+              else if (vehicle === 'INAP KANOPI') { g.cash.inapKanopi.qty += cashQty; g.cash.inapKanopi.amt += cashAmt; }
+            }
+          }
+        });
+
+        const dataRows = Object.values(groups).sort((a,b) => {
+          if (a.shift !== b.shift) return a.shift - b.shift;
+          return a.posKeluar.localeCompare(b.posKeluar, undefined, {numeric: true});
+        });
+
+        setStatus('Menyimpan ke Cloud...', 'loading');
+        await saveToCloud(dateStr, dataRows);
+
+        setStatus('Membuat Excel LGH...', 'loading');
+        await generateLGHExcel(dataRows, dateStr);
+
+        setStatus('Berhasil diproses & di-download!', 'success');
+      } catch(e) {
+        console.error(e);
+        setStatus('Terjadi kesalahan: ' + e.message, 'error');
+      } finally {
+        document.getElementById('processBtn').disabled = false;
+      }
+    }
+
+    async function generateLGHExcel(data, dateStr) {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('LGH Casual');
+
+      const fontTitle = { name: 'Arial', size: 14, bold: true };
+      const fontHeader = { name: 'Arial', size: 9, bold: true };
+      const fontData = { name: 'Arial', size: 10 };
+      const alignCenter = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      const borderAll = {
+        top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'}
+      };
+
+      ws.getCell('B1').value = 'PT Angkasa Pura Suport';
+      ws.getCell('B1').font = { name: 'Arial', size: 10, bold: true };
+      
+      ws.getCell('B2').value = 'REKAPITULASI LAPORAN GABUNGAN HARIAN';
+      ws.getCell('B2').font = fontTitle;
+      
+      const parts = dateStr.split(' ');
+      const day = parts[0] || '1';
+      const monthStr = parts.length > 1 ? parts[1].toUpperCase() : 'AGUSTUS';
+      
+      ws.getCell('B5').value = 'PERIODE :';
+      ws.getCell('D5').value = monthStr;
+      ws.getCell('B6').value = 'SITE:';
+      ws.getCell('D6').value = 'BANDARA INTERNASIONAL SYAMSUDIN NOOR BANJARMASIN';
+      ws.getCell('B7').value = 'Tgl :';
+      ws.getCell('C7').value = day;
+
+      const headCols = [
+        [null, "NO", "POS KELUAR", "PETUGAS POS / KASIR", "SHIFT", "PRODUKSI DAN PENDAPATAN KENDARAAN CASH", "", "", "", "", "", "", "", "VIP", "", "", "", "UANG ELEKTRONIK", "", "", "", "TIKET MASALAH", "", "", "", "INAP TANPA KANOPI", "", "INAP MEDIUM", "", "INAP KANOPI", "", "QTY", "INCOME CASH", "QTY", "INCOME UNIK", "QTY TOTAL", "INCOME TUNAI"],
+        [null, "", "", "", "", "REGULAR", "", "", "", "KARGO", "", "", "", "VIP", "", "", "", "UANG ELEKTRONIK", "", "", "", "TIKET MASALAH", "", "", "", "INAP TANPA KANOPI", "", "INAP MEDIUM", "", "INAP KANOPI", "", "", "", "", "", "", ""],
+        [null, "", "", "", "", "RODA 2", "", "RODA 4 & 6", "", "RODA 2", "", "RODA 4 & 6", "", "RODA 4", "", "", "", "RODA 2", "", "RODA 4 & 6", "", "RODA 2", "", "RODA 4 & 6", "", "RODA 4 & 6", "", "RODA 4 & 6", "", "RODA 4 & 6", "", "", "", "", "", "", ""],
+        [null, "", "", "", "", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASH", "QTY", "INCOME UNIK", "QTY TOTAL", "INCOME TUNAI"]
+      ];
+
+      for (let i = 0; i < 4; i++) {
+        ws.addRow([]);
+      }
+      
+      for(let i=0; i<4; i++) {
+        const r = ws.getRow(9 + i);
+        r.values = headCols[i];
+        r.eachCell((cell, colNum) => {
+          if (colNum > 1) {
+             cell.font = fontHeader;
+             cell.alignment = alignCenter;
+             cell.border = borderAll;
+          }
+        });
+      }
+
+      ws.mergeCells('B9:B12'); 
+      ws.mergeCells('C9:C12'); 
+      ws.mergeCells('D9:D12'); 
+      ws.mergeCells('E9:E12'); 
+      ws.mergeCells('F9:M9'); 
+      ws.mergeCells('F10:I10'); 
+      ws.mergeCells('J10:M10'); 
+      ws.mergeCells('F11:G11'); ws.mergeCells('H11:I11'); ws.mergeCells('J11:K11'); ws.mergeCells('L11:M11');
+      ws.mergeCells('N9:Q9'); 
+      ws.mergeCells('N10:Q10');
+      ws.mergeCells('N11:Q11');
+      ws.mergeCells('N12:O12'); ws.mergeCells('P12:Q12');
+      ws.mergeCells('R9:U9'); 
+      ws.mergeCells('R10:U10');
+      ws.mergeCells('R11:S11'); ws.mergeCells('T11:U11');
+      ws.mergeCells('V9:Y9'); 
+      ws.mergeCells('V10:Y10');
+      ws.mergeCells('V11:W11'); ws.mergeCells('X11:Y11');
+      ws.mergeCells('Z9:AA9'); 
+      ws.mergeCells('Z10:AA10');
+      ws.mergeCells('Z11:AA11');
+      ws.mergeCells('AB9:AC9'); 
+      ws.mergeCells('AB10:AC10');
+      ws.mergeCells('AB11:AC11');
+      ws.mergeCells('AD9:AE9'); 
+      ws.mergeCells('AD10:AE10');
+      ws.mergeCells('AD11:AE11');
+      ws.mergeCells('AF9:AF12'); 
+      ws.mergeCells('AG9:AG12'); 
+      ws.mergeCells('AH9:AH12'); 
+      ws.mergeCells('AI9:AI12'); 
+      ws.mergeCells('AJ9:AJ12'); 
+      ws.mergeCells('AK9:AK12'); 
+
+      let currentShiftRowIdx = 13;
+      let lastShift = -1;
+      let shiftStartRow = 13;
+      let rowNum = 1;
+
+      data.forEach((d) => {
+        if(lastShift !== -1 && lastShift !== d.shift) {
+          const subR = ws.getRow(currentShiftRowIdx);
+          subR.values = [null, "SUB TOTAL", "SUB TOTAL", "SUB TOTAL", "SUB TOTAL"];
+          subR.font = { name: 'Arial', size: 10, bold: true };
+          for(let c=6; c<=37; c++) {
+            const colL = ws.getColumn(c).letter;
+            subR.getCell(c).value = { formula: \`SUM(\${colL}\${shiftStartRow}:\${colL}\${currentShiftRowIdx-1})\` };
+            subR.getCell(c).border = borderAll;
+            subR.getCell(c).alignment = {vertical: 'middle', horizontal: 'right'};
+            subR.getCell(c).numFmt = '#,##0';
+          }
+          ws.mergeCells(\`B\${currentShiftRowIdx}:E\${currentShiftRowIdx}\`);
+          currentShiftRowIdx++;
+          shiftStartRow = currentShiftRowIdx;
+          rowNum = 1;
+        }
+
+        const r = ws.getRow(currentShiftRowIdx);
+        r.getCell(2).value = rowNum++;
+        r.getCell(3).value = d.posKeluar;
+        r.getCell(4).value = d.petugas;
+        r.getCell(5).value = d.shift;
+
+        const setC = (col, val) => {
+          if(val === 0) val = null;
+          r.getCell(col).value = val;
+          r.getCell(col).numFmt = '#,##0';
+        };
+
+        setC(6, d.cash.r2.qty); setC(7, d.cash.r2.amt);
+        setC(8, d.cash.r4.qty); setC(9, d.cash.r4.amt);
+        setC(10, null); setC(11, null); setC(12, null); setC(13, null);
+        setC(14, d.cash.vip.qty); setC(15, d.cash.vip.amt);
+        setC(16, null); setC(17, null);
+        setC(18, d.unik.r2.qty); setC(19, d.unik.r2.amt);
+        setC(20, d.unik.r4.qty); setC(21, d.unik.r4.amt);
+        setC(22, null); setC(23, null); setC(24, null); setC(25, null);
+        setC(26, d.cash.inapTanpaKanopi.qty); setC(27, d.cash.inapTanpaKanopi.amt);
+        setC(28, null); setC(29, null);
+        setC(30, d.cash.inapKanopi.qty); setC(31, d.cash.inapKanopi.amt);
+
+        const rIdx = currentShiftRowIdx;
+        r.getCell(32).value = { formula: \`F\${rIdx}+H\${rIdx}+J\${rIdx}+L\${rIdx}+N\${rIdx}+P\${rIdx}+V\${rIdx}+X\${rIdx}+Z\${rIdx}+AB\${rIdx}+AD\${rIdx}\` };
+        r.getCell(33).value = { formula: \`G\${rIdx}+I\${rIdx}+K\${rIdx}+M\${rIdx}+O\${rIdx}+Q\${rIdx}+W\${rIdx}+Y\${rIdx}+AA\${rIdx}+AC\${rIdx}+AE\${rIdx}\` };
+        r.getCell(34).value = { formula: \`R\${rIdx}+T\${rIdx}\` };
+        r.getCell(35).value = { formula: \`S\${rIdx}+U\${rIdx}\` };
+        r.getCell(36).value = { formula: \`AF\${rIdx}+AH\${rIdx}\` };
+        r.getCell(37).value = { formula: \`AG\${rIdx}+AI\${rIdx}\` };
+
+        for(let c=2; c<=37; c++) {
+          r.getCell(c).border = borderAll;
+          if (c < 6) {
+             r.getCell(c).font = fontData;
+             r.getCell(c).alignment = {vertical: 'middle', horizontal: 'center'};
+          } else {
+             r.getCell(c).font = fontData;
+             r.getCell(c).alignment = {vertical: 'middle', horizontal: 'right'};
+             r.getCell(c).numFmt = '#,##0';
+          }
+        }
+
+        lastShift = d.shift;
+        currentShiftRowIdx++;
+      });
+
+      if (lastShift !== -1) {
+        const subR = ws.getRow(currentShiftRowIdx);
+        subR.values = [null, "SUB TOTAL", "SUB TOTAL", "SUB TOTAL", "SUB TOTAL"];
+        subR.font = { name: 'Arial', size: 10, bold: true };
+        for(let c=6; c<=37; c++) {
+          const colL = ws.getColumn(c).letter;
+          subR.getCell(c).value = { formula: \`SUM(\${colL}\${shiftStartRow}:\${colL}\${currentShiftRowIdx-1})\` };
+          subR.getCell(c).border = borderAll;
+          subR.getCell(c).numFmt = '#,##0';
+          subR.getCell(c).alignment = {vertical: 'middle', horizontal: 'right'};
+        }
+        ws.mergeCells(\`B\${currentShiftRowIdx}:E\${currentShiftRowIdx}\`);
+      }
+
+      ws.columns = [
+        { width: 3 }, { width: 5 }, { width: 12 }, { width: 15 }, { width: 8 },
+        { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 },
+        { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 },
+        { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 },
+        { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 },
+        { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 },
+        { width: 10 }, { width: 14 }, { width: 10 }, { width: 14 }, { width: 10 }, { width: 14 }
+      ];
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      saveAs(blob, \`LGH_\${dateStr}.xlsx\`);
+    }
+  </script>
+</body>
+</html>
