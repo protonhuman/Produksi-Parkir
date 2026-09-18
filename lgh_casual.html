@@ -73,14 +73,16 @@
   .status.success { background: rgba(124,252,110,0.1); border: 1px solid rgba(124,252,110,0.3); color: var(--accent3); }
   .status.error { background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.3); color: var(--accent2); }
 
+  /* PIN OVERLAY CSS */
   #pinOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-  #pinBox { background: #111827; padding: 32px; border-radius: 8px; border: 1px solid var(--border); text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-width: 350px; width: 90%; }
-  #pinBox h2 { margin-top: 0; margin-bottom: 16px; font-size: 16px; color: var(--text-header); font-family: 'Syne', sans-serif; letter-spacing: 1px; }
-  #pinInput { width: 100%; padding: 12px; margin-bottom: 16px; font-size: 20px; text-align: center; letter-spacing: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); border-radius: 4px; box-sizing: border-box; outline: none; }
-  #pinInput:focus { border-color: var(--accent); }
-  #pinBtn { background: var(--accent); color: var(--btn-text); border: none; padding: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; font-family: 'Syne', sans-serif; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; }
-  #pinBtn:hover { filter: brightness(1.1); }
-  #pinError { color: var(--accent2); margin-bottom: 16px; display: none; font-size: 11px; }
+  #pinBox { background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 350px; width: 90%; }
+  .dark-theme #pinBox { background: #1e1e1e; color: #eee; }
+  #pinBox h2 { margin-top: 0; margin-bottom: 15px; font-size: 1.2rem; color: #000; font-family: sans-serif; letter-spacing: normal; }
+  #pinInput { width: 100%; padding: 12px; margin-bottom: 15px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box; background: white; color: #000; outline: none; }
+  .dark-theme #pinInput { background: #2d2d2d; border-color: #444; color: #fff; }
+  #pinBtn { background: #2563eb; color: white; border: none; padding: 12px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-family: sans-serif; text-transform: none; letter-spacing: normal; }
+  #pinBtn:hover { background: #1d4ed8; filter: none; }
+  #pinError { color: #dc2626; margin-bottom: 15px; display: none; font-weight: bold; font-size: 0.9rem; }
   
   /* Link navigasi */
   .nav-menu { display: flex; gap: 8px; margin-bottom: 16px; }
@@ -94,7 +96,7 @@
       <h2>🔒 Masukkan PIN Keamanan</h2>
       <div id="pinError">PIN Salah atau Server Error!</div>
       <input type="password" id="pinInput" placeholder="••••" maxlength="30" onkeypress="if(event.key === 'Enter') submitPin()" />
-      <button id="pinBtn" onclick="submitPin()">Akses Sistem</button>
+      <button id="pinBtn" onclick="submitPin()">Buka Kunci</button>
     </div>
   </div>
 
