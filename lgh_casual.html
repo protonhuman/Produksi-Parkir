@@ -622,7 +622,8 @@
              return;
           }
           
-          if (typeof colC === 'number') {
+          const colB = row.getCell(2).value;
+          if (typeof colB === 'number') {
             const getVal = (idx) => {
               const c = row.getCell(idx).value;
               if (c && c.richText) return c.richText.map(rt=>rt.text).join('').trim();
