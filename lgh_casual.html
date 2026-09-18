@@ -286,15 +286,31 @@
         if (data) {
           data.forEach(d => { 
             let val = typeof d.setting_value === 'string' ? JSON.parse(d.setting_value) : d.setting_value;
-            // If it's an Array (old format), we wrap it in our new format for day 1
+            // If it's an Array (old format), we merge it into the new format key
             if (Array.isArray(val)) {
-              let [_, yr, mo] = d.setting_key.split('_');
-              let yrNum = parseInt(yr); let moNum = parseInt(mo);
-              val = { year: yrNum, month: moNum, monthName: BULAN_INDO[moNum-1], days: { 1: val } };
+              const parts = d.setting_key.split('_'); // e.g. lgh_casual_24_agustus_2026
+              let dayStr = parts[2] || "1";
+              let monthStr = parts[3] || "agustus";
+              let yearStr = parts[4] || new Date().getFullYear().toString();
+              const { day, month, year } = parseDateFromFilename(dayStr + ' ' + monthStr + ' ' + yearStr);
+              
+              const newKey = getMonthKey(year, month);
+              if (!cloudData[newKey]) {
+                cloudData[newKey] = { year, month, monthName: BULAN_INDO[month-1], days: {} };
+              }
+              cloudData[newKey].days[day] = val;
+            } else {
+              // Normal new format object
+              if (val && typeof val === 'object' && !val.days) val.days = {};
+              
+              // Prevent overwriting if already populated by array migration
+              if (!cloudData[d.setting_key]) {
+                cloudData[d.setting_key] = val;
+              } else {
+                // Merge days if it already exists
+                Object.assign(cloudData[d.setting_key].days, val.days);
+              }
             }
-            // Ensure days exists
-            if (val && typeof val === 'object' && !val.days) val.days = {};
-            cloudData[d.setting_key] = val;
           });
           updateMonthSelector();
           if (selectedMonthKey) onMonthChange();
