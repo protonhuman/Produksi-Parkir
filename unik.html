@@ -1115,6 +1115,211 @@ async function generateUnikWorkbook(monthData, startDay, endDay) {
       borderThin, alignCtr, '#,##0');
   }
 
+  // ==========================================
+  // SHEET 2: REKAPITULASI UNIK
+  // ==========================================
+  const ws2 = wb.addWorksheet('REKAPITULASI UNIK');
+  
+  function AC2(row, col, val, font, fill, border, align, numFmt) {
+    const c = ws2.getCell(row, col);
+    if (val !== undefined) c.value = val;
+    if (font)   c.font      = font;
+    if (fill)   c.fill      = fill;
+    if (border) c.border    = border;
+    if (align)  c.alignment = align;
+    if (numFmt) c.numFmt    = numFmt;
+    return c;
+  }
+
+  const fillBlue = fillFor('FF2F75B5');
+  const fillLightBlue = fillFor('FF9BC2E6');
+  const fillBank = {
+    cash: fillFor('FFD9D9D9'),
+    bri: fillFor('FFBDD7EE'),
+    mandiri: fillFor('FFFFE699'),
+    bca: fillFor('FFC6E0B4'),
+    bni: fillFor('FFF8CBAD'),
+    qris: fillFor('FFE6B8B7')
+  };
+  const fontWhiteBold = { ...fontBold, color: {argb: 'FFFFFFFF'} };
+
+  ws2.columns = Array.from({length: 41}, () => ({width: 9}));
+  ws2.getColumn(1).width = 12; // TGL
+  ws2.getColumn(20).width = 14; // TOTAL PRODUKSI
+  ws2.getColumn(39).width = 16; // TOTAL PENDAPATAN
+  ws2.getColumn(40).width = 16; // SUB TOTAL PRODUKSI
+  ws2.getColumn(41).width = 18; // SUB TOTAL PENDAPATAN
+
+  ws2.mergeCells('A1:AO1');
+  AC2(1, 1, 'REKONSILIASI DATA PRODUKSI & PENDAPATAN PENGELOLAAN PARKIR KENDARAAN GLOBAL NON TUNAI (UNIK)', fontBold, null, null, alignCtr);
+  ws2.mergeCells('A2:AO2');
+  AC2(2, 1, 'BANDARA INTERNASIONAL SYAMSUDIN NOOR BANJARMASIN', fontBold, null, null, alignCtr);
+  ws2.mergeCells('A3:AO3');
+  AC2(3, 1, `${monthData.monthName.toUpperCase()} ${year}`, fontBold, null, null, alignCtr);
+
+  for(let r = 4; r <= 6; r++) {
+    for(let c = 1; c <= 41; c++) {
+      ws2.getCell(r, c).border = borderThin;
+    }
+  }
+
+  ws2.mergeCells('A4:A6');
+  AC2(4, 1, 'TGL', fontWhiteBold, fillBlue, borderThin, alignCtr);
+  
+  ws2.mergeCells('B4:S4');
+  AC2(4, 2, 'PRODUKSI', fontWhiteBold, fillBlue, borderThin, alignCtr);
+
+  ws2.mergeCells('T4:T6');
+  AC2(4, 20, 'TOTAL\nPRODUKSI', fontWhiteBold, fillBlue, borderThin, alignCtr);
+
+  ws2.mergeCells('U4:AL4');
+  AC2(4, 21, 'PENDAPATAN', fontBold, fillLightBlue, borderThin, alignCtr);
+
+  ws2.mergeCells('AM4:AM6');
+  AC2(4, 39, 'TOTAL\nPENDAPATAN', fontBold, fillLightBlue, borderThin, alignCtr);
+
+  ws2.mergeCells('AN4:AN6');
+  AC2(4, 40, 'SUB TOTAL\nPRODUKSI\n(3 hari)', fontWhiteBold, fillBlue, borderThin, alignCtr);
+
+  ws2.mergeCells('AO4:AO6');
+  AC2(4, 41, 'SUB TOTAL\nPENDAPATAN\n(3 hari)', fontWhiteBold, fillBlue, borderThin, alignCtr);
+
+  let prodCol = 2;
+  let pendCol = 21;
+  BANKS.forEach(bank => {
+    ws2.mergeCells(5, prodCol, 5, prodCol + 2);
+    AC2(5, prodCol, bank.label, fontBold, fillBank[bank.key], borderThin, alignCtr);
+    AC2(6, prodCol, 'Roda 2', fontBold, fillBank[bank.key], borderThin, alignCtr);
+    AC2(6, prodCol+1, 'Roda 4', fontBold, fillBank[bank.key], borderThin, alignCtr);
+    AC2(6, prodCol+2, 'Roda 6', fontBold, fillBank[bank.key], borderThin, alignCtr);
+    
+    ws2.mergeCells(5, pendCol, 5, pendCol + 2);
+    AC2(5, pendCol, bank.label, fontBold, fillBank[bank.key], borderThin, alignCtr);
+    AC2(6, pendCol, 'Roda 2', fontBold, fillBank[bank.key], borderThin, alignCtr);
+    AC2(6, pendCol+1, 'Roda 4', fontBold, fillBank[bank.key], borderThin, alignCtr);
+    AC2(6, pendCol+2, 'Roda 6', fontBold, fillBank[bank.key], borderThin, alignCtr);
+    
+    prodCol += 3;
+    pendCol += 3;
+  });
+
+  let currentSubTotalProd = 0;
+  let currentSubTotalPend = 0;
+  let subTotalCount = 0;
+  let subTotalStartRow = 7;
+  let dataRow = 7;
+
+  for (let d = startDay; d <= endDay; d++) {
+    const dd = monthData.days[String(d)] || {};
+    const dateStr = `${String(d).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
+    
+    for(let c = 1; c <= 41; c++) ws2.getCell(dataRow, c).border = borderThin;
+    
+    AC2(dataRow, 1, dateStr, fontBase, null, borderThin, alignCtr);
+    
+    let pCol = 2;
+    let aCol = 21;
+    let totalProd = 0;
+    let totalPend = 0;
+    
+    BANKS.forEach(bank => {
+      const pR2 = dd[`${bank.key}_r2_qty`] || 0;
+      const pR4 = dd[`${bank.key}_r4_qty`] || 0;
+      const pR6 = dd[`${bank.key}_r6_qty`] || 0;
+      const aR2 = dd[`${bank.key}_r2_amt`] || 0;
+      const aR4 = dd[`${bank.key}_r4_amt`] || 0;
+      const aR6 = dd[`${bank.key}_r6_amt`] || 0;
+      
+      AC2(dataRow, pCol, pR2, fontBase, fillBank[bank.key], borderThin, alignCtr, '#,##0');
+      AC2(dataRow, pCol+1, pR4, fontBase, fillBank[bank.key], borderThin, alignCtr, '#,##0');
+      AC2(dataRow, pCol+2, pR6, fontBase, fillBank[bank.key], borderThin, alignCtr, '#,##0');
+      
+      AC2(dataRow, aCol, aR2, fontBase, fillBank[bank.key], borderThin, alignCtr, '#,##0');
+      AC2(dataRow, aCol+1, aR4, fontBase, fillBank[bank.key], borderThin, alignCtr, '#,##0');
+      AC2(dataRow, aCol+2, aR6, fontBase, fillBank[bank.key], borderThin, alignCtr, '#,##0');
+      
+      totalProd += pR2 + pR4 + pR6;
+      totalPend += aR2 + aR4 + aR6;
+      
+      pCol += 3;
+      aCol += 3;
+    });
+    
+    AC2(dataRow, 20, totalProd, fontWhiteBold, fillBlue, borderThin, alignCtr, '#,##0');
+    AC2(dataRow, 39, totalPend, fontBold, fillLightBlue, borderThin, alignCtr, '#,##0');
+    
+    currentSubTotalProd += totalProd;
+    currentSubTotalPend += totalPend;
+    subTotalCount++;
+    
+    if (subTotalCount === 3 || d === endDay) {
+      if (subTotalStartRow !== dataRow) {
+        ws2.mergeCells(subTotalStartRow, 40, dataRow, 40);
+        ws2.mergeCells(subTotalStartRow, 41, dataRow, 41);
+      }
+      AC2(subTotalStartRow, 40, currentSubTotalProd, fontWhiteBold, fillBlue, borderThin, alignCtr, '#,##0');
+      AC2(subTotalStartRow, 41, currentSubTotalPend, fontWhiteBold, fillBlue, borderThin, alignCtr, '#,##0');
+      
+      currentSubTotalProd = 0;
+      currentSubTotalPend = 0;
+      subTotalCount = 0;
+      subTotalStartRow = dataRow + 1;
+    }
+    
+    dataRow++;
+  }
+
+  const totRow = dataRow;
+  for(let c = 1; c <= 41; c++) ws2.getCell(totRow, c).border = borderThin;
+  
+  AC2(totRow, 1, 'TOTAL', fontBold, null, borderThin, alignCtr);
+  
+  for (let c = 2; c <= 39; c++) {
+    const colLet = colL(c);
+    let cellFont = fontBold;
+    let cellFill = null;
+    if (c === 20) {
+      cellFont = fontWhiteBold;
+      cellFill = fillBlue;
+    } else if (c === 39) {
+      cellFill = fillLightBlue;
+    } else {
+      const isPend = c >= 21;
+      const offset = isPend ? c - 21 : c - 2;
+      const bankIdx = Math.floor(offset / 3);
+      if (bankIdx < BANKS.length) {
+        cellFill = fillBank[BANKS[bankIdx].key];
+      }
+    }
+    AC2(totRow, c, {formula: `SUM(${colLet}7:${colLet}${dataRow-1})`}, cellFont, cellFill, borderThin, alignCtr, '#,##0');
+  }
+  
+  AC2(totRow, 40, {formula: `SUM(T7:T${dataRow-1})`}, fontWhiteBold, fillBlue, borderThin, alignCtr, '#,##0');
+  AC2(totRow, 41, {formula: `SUM(AM7:AM${dataRow-1})`}, fontWhiteBold, fillBlue, borderThin, alignCtr, '#,##0');
+
+  const grandBankRow = dataRow + 1;
+  for(let c = 1; c <= 41; c++) ws2.getCell(grandBankRow, c).border = borderThin;
+  
+  pCol = 2;
+  aCol = 21;
+  BANKS.forEach(bank => {
+    ws2.mergeCells(grandBankRow, pCol, grandBankRow, pCol + 2);
+    const pStart = colL(pCol);
+    const pEnd = colL(pCol+2);
+    AC2(grandBankRow, pCol, {formula: `SUM(${pStart}${totRow}:${pEnd}${totRow})`}, fontBold, fillBank[bank.key], borderThin, alignCtr, '#,##0');
+    
+    ws2.mergeCells(grandBankRow, aCol, grandBankRow, aCol + 2);
+    const aStart = colL(aCol);
+    const aEnd = colL(aCol+2);
+    AC2(grandBankRow, aCol, {formula: `SUM(${aStart}${totRow}:${aEnd}${totRow})`}, fontBold, fillBank[bank.key], borderThin, alignCtr, '#,##0');
+    
+    pCol += 3;
+    aCol += 3;
+  });
+  
+  AC2(grandBankRow, 20, {formula: `T${totRow}`}, fontWhiteBold, fillBlue, borderThin, alignCtr, '#,##0');
+  AC2(grandBankRow, 39, {formula: `AM${totRow}`}, fontBold, fillLightBlue, borderThin, alignCtr, '#,##0');
+
   return wb;
 }
 
