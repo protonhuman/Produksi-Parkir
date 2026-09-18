@@ -88,6 +88,30 @@
   .nav-menu { display: flex; gap: 8px; margin-bottom: 16px; }
   .nav-link { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: none; padding: 6px 14px; border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); transition: all 0.15s; }
   .nav-link:hover { color: var(--text); border-color: var(--accent); }
+
+  /* === DAY GRID === */
+  .stats-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .stats-count { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--accent); }
+  .stats-label { font-size: 11px; color: var(--text-dim); }
+  .progress-track { flex: 1; min-width: 120px; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent3)); border-radius: 2px; transition: width 0.4s ease; }
+  .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 16px 0; }
+  .day-cell { text-align: center; padding: 10px 4px; border: 1px solid var(--border); border-radius: 3px; font-size: 13px; cursor: pointer; transition: all 0.2s; position: relative; user-select: none; }
+  .day-cell:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .day-cell.filled { border-color: rgba(124,252,110,0.4); background: rgba(124,252,110,0.06); color: var(--accent3); font-weight: 600; }
+  .day-cell.filled::after { content: '✓'; position: absolute; top: 2px; right: 4px; font-size: 8px; color: var(--accent3); }
+  .day-cell.selected { border-color: var(--accent); background: rgba(167,139,250,0.12); color: var(--accent); box-shadow: 0 0 12px rgba(167,139,250,0.15); }
+  .day-cell.empty { color: var(--text-dim); opacity: 0.5; }
+  
+  /* === MONTH SELECTOR === */
+  .month-selector { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+  .month-selector select { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 12px; border-radius: 3px; outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7fa3' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+  .month-selector select:focus { border-color: var(--accent); }
+  
+  .btn-download { background: var(--accent3); color: var(--btn-text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; padding: 14px 20px; border-radius: 3px; cursor: pointer; transition: all 0.15s; margin-top: 16px; width: 100%; }
+  .btn-download:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-download:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+
 </style>
 </head>
 <body class="theme-default">
@@ -100,13 +124,14 @@
     </div>
   </div>
 
+  
   <div class="container">
     <header>
       <div class="nav-menu">
-         <a href="index.html" class="nav-link">Dashboard</a>
-         <a href="unik.html" class="nav-link">UNIK</a>
-         <a href="statistik.html" class="nav-link">Statistik</a>
-         <a href="lgh_casual.html" class="nav-link" style="color: var(--accent); border-color: var(--accent); background: rgba(167,139,250,0.08);">LGH Casual</a>
+         <a href="/" class="nav-link">Produksi Parkir</a>
+         <a href="/statistik" class="nav-link">Statistik Parkir</a>
+         <a href="/unik" class="nav-link">Rekapitulasi UNIK</a>
+         <a href="/lgh_casual" class="nav-link" style="color: var(--accent); border-color: var(--accent); background: rgba(167,139,250,0.08);">LGH Casual</a>
       </div>
       <div class="header-badge">Generator</div>
       <h1>LGH <span>Casual</span></h1>
@@ -114,8 +139,8 @@
     </header>
 
     <div class="card">
-      <div class="upload-zone" id="dropZone">
-        <input type="file" id="fileInput" accept=".xlsx, .xls">
+      <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept=".xlsx, .xls" style="display:none">
         <div class="upload-icon">📁</div>
         <span class="upload-label">UPLOAD FILE UNIK.XLSX</span>
         <div class="upload-filename" id="filenameDisplay">Belum ada file terpilih</div>
@@ -123,18 +148,160 @@
     </div>
 
     <div class="card detected-info" id="detectedInfo">
-      <div class="field">
-        <label>Tanggal Dokumen (Untuk disave ke Cloud)</label>
-        <input type="text" id="detectedDate" placeholder="Cth: 24 AGUSTUS 2026">
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <div class="field" style="flex:1">
+          <label>Tanggal</label>
+          <input type="number" id="inputDay" min="1" max="31" value="1">
+        </div>
+        <div class="field" style="flex:1">
+          <label>Bulan</label>
+          <select id="inputMonth">
+            <option value="1">Januari</option><option value="2">Februari</option>
+            <option value="3">Maret</option><option value="4">April</option>
+            <option value="5">Mei</option><option value="6">Juni</option>
+            <option value="7">Juli</option><option value="8">Agustus</option>
+            <option value="9">September</option><option value="10">Oktober</option>
+            <option value="11">November</option><option value="12">Desember</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1">
+          <label>Tahun</label>
+          <input type="number" id="inputYear" min="2020" max="2100" value="2026">
+        </div>
       </div>
-      <button class="btn-primary" id="processBtn" onclick="processData()">Proses & Download LGH</button>
+      <button class="btn-primary" id="processBtn" onclick="processData()">💾 SIMPAN KE REKAP BULANAN</button>
       <div id="statusMsg" class="status"></div>
+    </div>
+
+    <div style="margin-top: 32px;" class="section-label">Rekap Bulanan</div>
+    <div class="card">
+      <div class="month-selector">
+        <select id="selectMonth" onchange="onMonthChange()"></select>
+      </div>
+
+      <div class="stats-bar">
+        <div>
+          <div class="stats-count" id="statsCount">0 / 31</div>
+          <div class="stats-label">hari terisi</div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="day-grid" id="dayGrid"></div>
+      
+      <button class="btn-download" id="btnDownloadMonthly" onclick="downloadMonthlyLGH()" disabled>
+        ⬇ DOWNLOAD LGH BULANAN (1 SHEET)
+      </button>
     </div>
   </div>
 
   <script>
     let supabaseUrl, supabaseKey, supabaseClient;
+    
+    const BULAN_INDO = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+    let cloudData = {};
+    let selectedMonthKey = null;
+    let currentUpload = null;
     let selectedFile = null;
+
+    function parseDateFromFilename(name) {
+      let day = 1, month = new Date().getMonth() + 1, year = new Date().getFullYear();
+      name = name.toUpperCase();
+      for (let i = 0; i < BULAN_INDO.length; i++) {
+        if (name.includes(BULAN_INDO[i].toUpperCase())) { month = i + 1; break; }
+      }
+      const numMatch = name.match(/(\d{1,2})(?:\.\w+)?$/);
+      if (numMatch) {
+        const d = parseInt(numMatch[1]);
+        if (d >= 1 && d <= 31) day = d;
+      }
+      const yrMatch = name.match(/(20\d{2})/);
+      if (yrMatch) year = parseInt(yrMatch[1]);
+      return { day, month, year };
+    }
+
+    function initPageAfterPin() {
+      loadAllMonthsFromCloud();
+    }
+    
+    async function loadAllMonthsFromCloud() {
+      if(!supabaseClient) return;
+      try {
+        const { data, error } = await supabaseClient.from('app_settings').select('setting_key, setting_value').like('setting_key', 'lgh_%');
+        if (data) {
+          data.forEach(d => { cloudData[d.setting_key] = typeof d.setting_value === 'string' ? JSON.parse(d.setting_value) : d.setting_value; });
+          updateMonthSelector();
+          if (selectedMonthKey) onMonthChange();
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    function getMonthKey(year, month) {
+      return `lgh_${year}_${String(month).padStart(2,'0')}`;
+    }
+
+    async function saveMonth(key, dataObj) {
+      cloudData[key] = dataObj;
+      try {
+        const { data: existing } = await supabaseClient.from('app_settings').select('id').eq('setting_key', key).single();
+        if (existing) {
+          await supabaseClient.from('app_settings').update({ setting_value: dataObj }).eq('id', existing.id);
+        } else {
+          await supabaseClient.from('app_settings').insert([{ setting_key: key, setting_value: dataObj }]);
+        }
+      } catch(e) { console.error('saveMonth error:', e); }
+    }
+
+    function updateMonthSelector() {
+      const sel = document.getElementById('selectMonth');
+      const keys = Object.keys(cloudData).filter(k => k.startsWith('lgh_')).sort().reverse();
+      sel.innerHTML = '';
+      if (keys.length === 0) {
+        sel.innerHTML = '<option value="">Belum ada data di cloud</option>';
+        selectedMonthKey = null;
+      } else {
+        keys.forEach(k => {
+          const m = cloudData[k];
+          sel.innerHTML += `<option value="${k}">${m.monthName} ${m.year} (${Object.keys(m.days).length} hari)</option>`;
+        });
+        if (!selectedMonthKey || !cloudData[selectedMonthKey]) selectedMonthKey = keys[0];
+        sel.value = selectedMonthKey;
+      }
+      renderDayGrid();
+    }
+
+    function onMonthChange() {
+      selectedMonthKey = document.getElementById('selectMonth').value;
+      renderDayGrid();
+    }
+
+    function renderDayGrid() {
+      const grid = document.getElementById('dayGrid');
+      grid.innerHTML = '';
+      document.getElementById('btnDownloadMonthly').disabled = true;
+      if (!selectedMonthKey || !cloudData[selectedMonthKey]) {
+        document.getElementById('statsCount').textContent = '0 / 31';
+        document.getElementById('progressFill').style.width = '0%';
+        return;
+      }
+      
+      const mData = cloudData[selectedMonthKey];
+      const daysInMonth = new Date(mData.year, mData.month, 0).getDate();
+      const filledCount = Object.keys(mData.days).length;
+      document.getElementById('statsCount').textContent = `${filledCount} / ${daysInMonth}`;
+      document.getElementById('progressFill').style.width = `${(filledCount/daysInMonth)*100}%`;
+      
+      if (filledCount > 0) document.getElementById('btnDownloadMonthly').disabled = false;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const div = document.createElement('div');
+        div.className = 'day-cell ' + (mData.days[d] ? 'filled' : 'empty');
+        div.textContent = d;
+        grid.appendChild(div);
+      }
+    }
 
     // ===== PIN LOGIC =====
     async function checkPinAndInit(pin) {
@@ -172,6 +339,7 @@
         document.getElementById('pinOverlay').style.display = 'none';
         document.body.style.overflow = 'auto';
         sessionStorage.setItem('appPin', pin);
+        if(typeof initPageAfterPin === 'function') initPageAfterPin();
       } catch (e) {
         err.style.display = 'block';
         err.textContent = e.message || 'PIN Salah atau tidak ada koneksi!';
@@ -237,29 +405,11 @@
       el.className = 'status show ' + type;
     }
 
-    async function saveToCloud(dateStr, lghData) {
-      if(!supabaseClient) return;
-      try {
-        const key = 'lgh_casual_' + dateStr.replace(/\s+/g, '_').toLowerCase();
-        const { data: existing } = await supabaseClient.from('app_settings').select('id').eq('setting_key', key).single();
-        if (existing) {
-          await supabaseClient.from('app_settings').update({ setting_value: JSON.stringify(lghData) }).eq('id', existing.id);
-        } else {
-          await supabaseClient.from('app_settings').insert([{ setting_key: key, setting_value: JSON.stringify(lghData) }]);
-        }
-      } catch(e) {
-        console.error('Cloud save err:', e);
-      }
-    }
-
-    // MAIN PROCESSING LOGIC
     async function processData() {
       if(!selectedFile) return;
-      const dateStr = document.getElementById('detectedDate').value.trim();
-      if(!dateStr) {
-        setStatus('Tentukan tanggal deteksi!', 'error');
-        return;
-      }
+      const day = parseInt(document.getElementById('inputDay').value);
+      const month = parseInt(document.getElementById('inputMonth').value);
+      const year = parseInt(document.getElementById('inputYear').value);
       
       setStatus('Membaca file Excel...', 'loading');
       document.getElementById('processBtn').disabled = true;
@@ -273,7 +423,6 @@
         let currentShift = 1;
 
         sheet.eachRow({ includeEmpty: true }, (row, rowNum) => {
-          // Identify shift row (starts with SHF)
           const colC = row.getCell(3).value;
           let textC = '';
           if (colC && colC.richText) textC = colC.richText[0].text || '';
@@ -285,7 +434,6 @@
              return;
           }
           
-          // Data rows have a numeric "No." in column 3
           if (typeof colC === 'number') {
             const getVal = (idx) => {
               const c = row.getCell(idx).value;
@@ -309,7 +457,6 @@
             const cashQty = getNum(7);
             const cashAmt = getNum(8);
             
-            // Unik = Mandiri(9,10) + BRI(11,13) + BCA(14,15) + BNI(16,17) 
             const unikQty = getNum(9) + getNum(11) + getNum(14) + getNum(16);
             const unikAmt = getNum(10) + getNum(13) + getNum(15) + getNum(17);
 
@@ -321,30 +468,17 @@
             const groupKey = currentShift + '_' + posKeluar + '_' + rawUser;
             if(!groups[groupKey]) {
               groups[groupKey] = {
-                shift: currentShift,
-                posKeluar: posKeluar,
-                petugas: rawUser,
-                cash: {
-                  r2: {qty:0, amt:0},
-                  r4: {qty:0, amt:0},
-                  vip: {qty:0, amt:0},
-                  inapTanpaKanopi: {qty:0, amt:0},
-                  inapKanopi: {qty:0, amt:0}
-                },
-                unik: {
-                  r2: {qty:0, amt:0},
-                  r4: {qty:0, amt:0}
-                }
+                shift: currentShift, posKeluar: posKeluar, petugas: rawUser,
+                cash: { r2: {qty:0, amt:0}, r4: {qty:0, amt:0}, vip: {qty:0, amt:0}, inapTanpaKanopi: {qty:0, amt:0}, inapKanopi: {qty:0, amt:0} },
+                unik: { r2: {qty:0, amt:0}, r4: {qty:0, amt:0} }
               };
             }
             
             const g = groups[groupKey];
-            
             if (unikQty > 0 || unikAmt > 0) {
               if (isR2) { g.unik.r2.qty += unikQty; g.unik.r2.amt += unikAmt; }
               else if (isR4) { g.unik.r4.qty += unikQty; g.unik.r4.amt += unikAmt; }
             }
-            
             if (cashQty > 0 || cashAmt > 0) {
               if (isR2) { g.cash.r2.qty += cashQty; g.cash.r2.amt += cashAmt; }
               else if (['CAR', 'BOX', 'BOX/TRUCK', 'BUS'].includes(vehicle)) { g.cash.r4.qty += cashQty; g.cash.r4.amt += cashAmt; }
@@ -360,13 +494,18 @@
           return a.posKeluar.localeCompare(b.posKeluar, undefined, {numeric: true});
         });
 
-        setStatus('Menyimpan ke Cloud...', 'loading');
-        await saveToCloud(dateStr, dataRows);
+        setStatus('Menyimpan ke Rekap Bulanan...', 'loading');
+        const key = getMonthKey(year, month);
+        let mData = cloudData[key] || { year, month, monthName: BULAN_INDO[month-1], days: {} };
+        mData.days[day] = dataRows;
+        
+        await saveMonth(key, mData);
 
-        setStatus('Membuat Excel LGH...', 'loading');
-        await generateLGHExcel(dataRows, dateStr);
+        setStatus('Data tanggal ' + day + ' berhasil disave!', 'success');
+        
+        selectedMonthKey = key;
+        updateMonthSelector();
 
-        setStatus('Berhasil diproses & di-download!', 'success');
       } catch(e) {
         console.error(e);
         setStatus('Terjadi kesalahan: ' + e.message, 'error');
@@ -374,6 +513,7 @@
         document.getElementById('processBtn').disabled = false;
       }
     }
+
 
     async function generateLGHExcel(data, dateStr) {
       const wb = new ExcelJS.Workbook();
