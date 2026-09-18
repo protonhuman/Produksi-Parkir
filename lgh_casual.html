@@ -918,6 +918,244 @@
       const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       saveAs(blob, `LGH_${dateStr}.xlsx`);
     }
-  </script>
+  
+    async function downloadMonthlyLGH() {
+      const mData = cloudData[selectedMonthKey];
+      if (!mData || !mData.days || Object.keys(mData.days).length === 0) {
+        alert('Belum ada data untuk bulan ini!');
+        return;
+      }
+      setStatus('Meng-generate Excel...', 'loading');
+      
+      try {
+        let aggregatedGroups = {};
+        const days = Object.keys(mData.days).map(Number).sort((a,b)=>a-b);
+        
+        for(let d of days) {
+          const arr = mData.days[d];
+          if(arr && arr.length > 0) {
+            arr.forEach(item => {
+               const gk = item.shift + '_' + item.posKeluar + '_' + item.petugas;
+               if (!aggregatedGroups[gk]) {
+                 aggregatedGroups[gk] = JSON.parse(JSON.stringify(item));
+               } else {
+                 const g = aggregatedGroups[gk];
+                 g.cash.r2.qty += item.cash.r2.qty; g.cash.r2.amt += item.cash.r2.amt;
+                 g.cash.r4.qty += item.cash.r4.qty; g.cash.r4.amt += item.cash.r4.amt;
+                 g.cash.vip.qty += item.cash.vip.qty; g.cash.vip.amt += item.cash.vip.amt;
+                 g.cash.inapTanpaKanopi.qty += item.cash.inapTanpaKanopi.qty; g.cash.inapTanpaKanopi.amt += item.cash.inapTanpaKanopi.amt;
+                 g.cash.inapKanopi.qty += item.cash.inapKanopi.qty; g.cash.inapKanopi.amt += item.cash.inapKanopi.amt;
+                 
+                 g.unik.r2.qty += item.unik.r2.qty; g.unik.r2.amt += item.unik.r2.amt;
+                 g.unik.r4.qty += item.unik.r4.qty; g.unik.r4.amt += item.unik.r4.amt;
+               }
+            });
+          }
+        }
+        
+        let allData = Object.values(aggregatedGroups).sort((a,b) => {
+          if (a.shift !== b.shift) return a.shift - b.shift;
+          return a.posKeluar.localeCompare(b.posKeluar, undefined, {numeric: true});
+        });
+        
+        const firstDay = days[0];
+        const lastDay = days[days.length - 1];
+        let dateStr = firstDay === lastDay ? `${firstDay} ${mData.monthName} ${mData.year}` : `${firstDay}-${lastDay} ${mData.monthName} ${mData.year}`;
+        
+        await generateLGHExcel(allData, dateStr);
+        setStatus('Download selesai!', 'success');
+      } catch(e) {
+        console.error(e);
+        setStatus('Gagal download: ' + e.message, 'error');
+      }
+    }
+
+async function generateLGHExcel(data, dateStr) {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('LGH Casual');
+
+      const fontTitle = { name: 'Arial', size: 14, bold: true };
+      const fontHeader = { name: 'Arial', size: 9, bold: true };
+      const fontData = { name: 'Arial', size: 10 };
+      const alignCenter = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      const borderAll = {
+        top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'}
+      };
+
+      ws.getCell('B1').value = 'PT Angkasa Pura Suport';
+      ws.getCell('B1').font = { name: 'Arial', size: 10, bold: true };
+      
+      ws.getCell('B2').value = 'REKAPITULASI LAPORAN GABUNGAN HARIAN';
+      ws.getCell('B2').font = fontTitle;
+      
+      const parts = dateStr.split(' ');
+      const day = parts[0] || '1';
+      const monthStr = parts.length > 1 ? parts[1].toUpperCase() : 'AGUSTUS';
+      
+      ws.getCell('B5').value = 'PERIODE :';
+      ws.getCell('D5').value = monthStr;
+      ws.getCell('B6').value = 'SITE:';
+      ws.getCell('D6').value = 'BANDARA INTERNASIONAL SYAMSUDIN NOOR BANJARMASIN';
+      ws.getCell('B7').value = 'Tgl :';
+      ws.getCell('C7').value = day;
+
+      const headCols = [
+        [null, "NO", "POS KELUAR", "PETUGAS POS / KASIR", "SHIFT", "PRODUKSI DAN PENDAPATAN KENDARAAN CASH", "", "", "", "", "", "", "", "VIP", "", "", "", "UANG ELEKTRONIK", "", "", "", "TIKET MASALAH", "", "", "", "INAP TANPA KANOPI", "", "INAP MEDIUM", "", "INAP KANOPI", "", "QTY", "INCOME CASH", "QTY", "INCOME UNIK", "QTY TOTAL", "INCOME TUNAI"],
+        [null, "", "", "", "", "REGULAR", "", "", "", "KARGO", "", "", "", "VIP", "", "", "", "UANG ELEKTRONIK", "", "", "", "TIKET MASALAH", "", "", "", "INAP TANPA KANOPI", "", "INAP MEDIUM", "", "INAP KANOPI", "", "", "", "", "", "", ""],
+        [null, "", "", "", "", "RODA 2", "", "RODA 4 & 6", "", "RODA 2", "", "RODA 4 & 6", "", "RODA 4", "", "", "", "RODA 2", "", "RODA 4 & 6", "", "RODA 2", "", "RODA 4 & 6", "", "RODA 4 & 6", "", "RODA 4 & 6", "", "RODA 4 & 6", "", "", "", "", "", "", ""],
+        [null, "", "", "", "", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASUAL", "QTY", "INCOME CASH", "QTY", "INCOME UNIK", "QTY TOTAL", "INCOME TUNAI"]
+      ];
+
+      for (let i = 0; i < 4; i++) {
+        ws.addRow([]);
+      }
+      
+      for(let i=0; i<4; i++) {
+        const r = ws.getRow(9 + i);
+        r.values = headCols[i];
+        r.eachCell((cell, colNum) => {
+          if (colNum > 1) {
+             cell.font = fontHeader;
+             cell.alignment = alignCenter;
+             cell.border = borderAll;
+          }
+        });
+      }
+
+      ws.mergeCells('B9:B12'); 
+      ws.mergeCells('C9:C12'); 
+      ws.mergeCells('D9:D12'); 
+      ws.mergeCells('E9:E12'); 
+      ws.mergeCells('F9:M9'); 
+      ws.mergeCells('F10:I10'); 
+      ws.mergeCells('J10:M10'); 
+      ws.mergeCells('F11:G11'); ws.mergeCells('H11:I11'); ws.mergeCells('J11:K11'); ws.mergeCells('L11:M11');
+      ws.mergeCells('N9:Q9'); 
+      ws.mergeCells('N10:Q10');
+      ws.mergeCells('N11:Q11');
+      ws.mergeCells('N12:O12'); ws.mergeCells('P12:Q12');
+      ws.mergeCells('R9:U9'); 
+      ws.mergeCells('R10:U10');
+      ws.mergeCells('R11:S11'); ws.mergeCells('T11:U11');
+      ws.mergeCells('V9:Y9'); 
+      ws.mergeCells('V10:Y10');
+      ws.mergeCells('V11:W11'); ws.mergeCells('X11:Y11');
+      ws.mergeCells('Z9:AA9'); 
+      ws.mergeCells('Z10:AA10');
+      ws.mergeCells('Z11:AA11');
+      ws.mergeCells('AB9:AC9'); 
+      ws.mergeCells('AB10:AC10');
+      ws.mergeCells('AB11:AC11');
+      ws.mergeCells('AD9:AE9'); 
+      ws.mergeCells('AD10:AE10');
+      ws.mergeCells('AD11:AE11');
+      ws.mergeCells('AF9:AF12'); 
+      ws.mergeCells('AG9:AG12'); 
+      ws.mergeCells('AH9:AH12'); 
+      ws.mergeCells('AI9:AI12'); 
+      ws.mergeCells('AJ9:AJ12'); 
+      ws.mergeCells('AK9:AK12'); 
+
+      let currentShiftRowIdx = 13;
+      let lastShift = -1;
+      let shiftStartRow = 13;
+      let rowNum = 1;
+
+      data.forEach((d) => {
+        if(lastShift !== -1 && lastShift !== d.shift) {
+          const subR = ws.getRow(currentShiftRowIdx);
+          subR.values = [null, "SUB TOTAL", "SUB TOTAL", "SUB TOTAL", "SUB TOTAL"];
+          subR.font = { name: 'Arial', size: 10, bold: true };
+          for(let c=6; c<=37; c++) {
+            const colL = ws.getColumn(c).letter;
+            subR.getCell(c).value = { formula: `SUM(${colL}${shiftStartRow}:${colL}${currentShiftRowIdx-1})` };
+            subR.getCell(c).border = borderAll;
+            subR.getCell(c).alignment = {vertical: 'middle', horizontal: 'right'};
+            subR.getCell(c).numFmt = '#,##0';
+          }
+          ws.mergeCells(`B${currentShiftRowIdx}:E${currentShiftRowIdx}`);
+          currentShiftRowIdx++;
+          shiftStartRow = currentShiftRowIdx;
+          rowNum = 1;
+        }
+
+        const r = ws.getRow(currentShiftRowIdx);
+        r.getCell(2).value = rowNum++;
+        r.getCell(3).value = d.posKeluar;
+        r.getCell(4).value = d.petugas;
+        r.getCell(5).value = d.shift;
+
+        const setC = (col, val) => {
+          if(val === 0) val = null;
+          r.getCell(col).value = val;
+          r.getCell(col).numFmt = '#,##0';
+        };
+
+        setC(6, d.cash.r2.qty); setC(7, d.cash.r2.amt);
+        setC(8, d.cash.r4.qty); setC(9, d.cash.r4.amt);
+        setC(10, null); setC(11, null); setC(12, null); setC(13, null);
+        setC(14, d.cash.vip.qty); setC(15, d.cash.vip.amt);
+        setC(16, null); setC(17, null);
+        setC(18, d.unik.r2.qty); setC(19, d.unik.r2.amt);
+        setC(20, d.unik.r4.qty); setC(21, d.unik.r4.amt);
+        setC(22, null); setC(23, null); setC(24, null); setC(25, null);
+        setC(26, d.cash.inapTanpaKanopi.qty); setC(27, d.cash.inapTanpaKanopi.amt);
+        setC(28, null); setC(29, null);
+        setC(30, d.cash.inapKanopi.qty); setC(31, d.cash.inapKanopi.amt);
+
+        const rIdx = currentShiftRowIdx;
+        r.getCell(32).value = { formula: `F${rIdx}+H${rIdx}+J${rIdx}+L${rIdx}+N${rIdx}+P${rIdx}+V${rIdx}+X${rIdx}+Z${rIdx}+AB${rIdx}+AD${rIdx}` };
+        r.getCell(33).value = { formula: `G${rIdx}+I${rIdx}+K${rIdx}+M${rIdx}+O${rIdx}+Q${rIdx}+W${rIdx}+Y${rIdx}+AA${rIdx}+AC${rIdx}+AE${rIdx}` };
+        r.getCell(34).value = { formula: `R${rIdx}+T${rIdx}` };
+        r.getCell(35).value = { formula: `S${rIdx}+U${rIdx}` };
+        r.getCell(36).value = { formula: `AF${rIdx}+AH${rIdx}` };
+        r.getCell(37).value = { formula: `AG${rIdx}+AI${rIdx}` };
+
+        for(let c=2; c<=37; c++) {
+          r.getCell(c).border = borderAll;
+          if (c < 6) {
+             r.getCell(c).font = fontData;
+             r.getCell(c).alignment = {vertical: 'middle', horizontal: 'center'};
+          } else {
+             r.getCell(c).font = fontData;
+             r.getCell(c).alignment = {vertical: 'middle', horizontal: 'right'};
+             r.getCell(c).numFmt = '#,##0';
+          }
+        }
+
+        lastShift = d.shift;
+        currentShiftRowIdx++;
+      });
+
+      if (lastShift !== -1) {
+        const subR = ws.getRow(currentShiftRowIdx);
+        subR.values = [null, "SUB TOTAL", "SUB TOTAL", "SUB TOTAL", "SUB TOTAL"];
+        subR.font = { name: 'Arial', size: 10, bold: true };
+        for(let c=6; c<=37; c++) {
+          const colL = ws.getColumn(c).letter;
+          subR.getCell(c).value = { formula: `SUM(${colL}${shiftStartRow}:${colL}${currentShiftRowIdx-1})` };
+          subR.getCell(c).border = borderAll;
+          subR.getCell(c).numFmt = '#,##0';
+          subR.getCell(c).alignment = {vertical: 'middle', horizontal: 'right'};
+        }
+        ws.mergeCells(`B${currentShiftRowIdx}:E${currentShiftRowIdx}`);
+      }
+
+      ws.columns = [
+        { width: 3 }, { width: 5 }, { width: 12 }, { width: 15 }, { width: 8 },
+        { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 },
+        { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 },
+        { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 },
+        { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 },
+        { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 }, { width: 8 }, { width: 12 },
+        { width: 10 }, { width: 14 }, { width: 10 }, { width: 14 }, { width: 10 }, { width: 14 }
+      ];
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      saveAs(blob, `LGH_${dateStr}.xlsx`);
+    }
+  
+</script>
 </body>
 </html>
